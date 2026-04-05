@@ -1,121 +1,142 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { BrowserRouter, Routes, Route, Navigate } from "react-router";
+import { AuthProvider } from "./context/AuthContext";
+import ProtectedRoute from "./components/common/ProtectedRoute";
+import Layout from "./components/common/Layout";
+
+// Public
+import Login from "./pages/Login";
+
+// Admin Pages
+import AdminDashboard from "./pages/admin/Dashboard";
+import AdminMembers from "./pages/admin/Members";
+import AdminUnits from "./pages/admin/Units";
+import AdminStaff from "./pages/admin/Staff";
+import AdminBills from "./pages/admin/Bills";
+import AdminExpenses from "./pages/admin/Expenses";
+import AdminReports from "./pages/admin/Reports";
+import AdminNotices from "./pages/admin/Notices";
+import AdminComplaints from "./pages/admin/Complaints";
+import AdminPolls from "./pages/admin/Polls";
+import AdminGuards from "./pages/admin/Guards";
+import AdminVisitors from "./pages/admin/Visitors";
+import AdminPatrols from "./pages/admin/Patrols";
+import AdminAmenities from "./pages/admin/Amenities";
+
+// Resident Pages
+import ResidentDashboard from "./pages/resident/Dashboard";
+import ResidentUnit from "./pages/resident/Unit";
+import ResidentBills from "./pages/resident/Bills";
+import ResidentComplaints from "./pages/resident/Complaints";
+import ResidentNotices from "./pages/resident/Notices";
+import ResidentPolls from "./pages/resident/Polls";
+import ResidentAmenities from "./pages/resident/Amenities";
+import ResidentVisitors from "./pages/resident/Visitors";
+import ResidentSOS from "./pages/resident/SOS";
+
+// Guard Pages
+import GuardDashboard from "./pages/guard/Dashboard";
+import GuardVisitors from "./pages/guard/Visitors";
+import GuardStaff from "./pages/guard/Staff";
+import GuardPatrol from "./pages/guard/Patrol";
+
+// Staff Pages
+import StaffDashboard from "./pages/staff/Dashboard";
+import StaffAttendance from "./pages/staff/Attendance";
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Default redirect */}
+          <Route path="/" element={<Navigate to="/login" replace />} />
 
-      <div className="ticks"></div>
+          {/* Public */}
+          <Route path="/login" element={<Login />} />
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+          {/* ─── ADMIN ROUTES ─── */}
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute allowedRole="admin">
+                <Layout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<Navigate to="/admin/dashboard" replace />} />
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="members" element={<AdminMembers />} />
+            <Route path="units" element={<AdminUnits />} />
+            <Route path="staff" element={<AdminStaff />} />
+            <Route path="bills" element={<AdminBills />} />
+            <Route path="expenses" element={<AdminExpenses />} />
+            <Route path="reports" element={<AdminReports />} />
+            <Route path="notices" element={<AdminNotices />} />
+            <Route path="complaints" element={<AdminComplaints />} />
+            <Route path="polls" element={<AdminPolls />} />
+            <Route path="guards" element={<AdminGuards />} />
+            <Route path="visitors" element={<AdminVisitors />} />
+            <Route path="patrols" element={<AdminPatrols />} />
+            <Route path="amenities" element={<AdminAmenities />} />
+          </Route>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+          {/* ─── RESIDENT ROUTES ─── */}
+          <Route
+            path="/resident"
+            element={
+              <ProtectedRoute allowedRole="resident">
+                <Layout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<Navigate to="/resident/dashboard" replace />} />
+            <Route path="dashboard" element={<ResidentDashboard />} />
+            <Route path="unit" element={<ResidentUnit />} />
+            <Route path="bills" element={<ResidentBills />} />
+            <Route path="complaints" element={<ResidentComplaints />} />
+            <Route path="notices" element={<ResidentNotices />} />
+            <Route path="polls" element={<ResidentPolls />} />
+            <Route path="amenities" element={<ResidentAmenities />} />
+            <Route path="visitors" element={<ResidentVisitors />} />
+            <Route path="sos" element={<ResidentSOS />} />
+          </Route>
+
+          {/* ─── GUARD ROUTES ─── */}
+          <Route
+            path="/guard"
+            element={
+              <ProtectedRoute allowedRole="guard">
+                <Layout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<Navigate to="/guard/dashboard" replace />} />
+            <Route path="dashboard" element={<GuardDashboard />} />
+            <Route path="visitors" element={<GuardVisitors />} />
+            <Route path="staff" element={<GuardStaff />} />
+            <Route path="patrol" element={<GuardPatrol />} />
+          </Route>
+
+          {/* ─── STAFF ROUTES ─── */}
+          <Route
+            path="/staff"
+            element={
+              <ProtectedRoute allowedRole="staff">
+                <Layout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<Navigate to="/staff/dashboard" replace />} />
+            <Route path="dashboard" element={<StaffDashboard />} />
+            <Route path="attendance" element={<StaffAttendance />} />
+          </Route>
+
+          {/* Catch-all */}
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
+  );
 }
 
-export default App
+export default App;
