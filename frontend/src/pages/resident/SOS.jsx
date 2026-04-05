@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
   Box, Typography, Button, Card, CardContent, Alert, CircularProgress, Dialog,
-  DialogTitle, DialogContent, DialogActions, TextField
+  DialogContent, DialogActions, TextField, Divider
 } from "@mui/material";
 import SosIcon from "@mui/icons-material/Sos";
 import WarningIcon from "@mui/icons-material/Warning";
@@ -10,11 +10,11 @@ import { useAuth } from "../../context/AuthContext";
 
 const SOS = () => {
   const { user } = useAuth();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen]         = useState(false);
   const [location, setLocation] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false);
-  const [error, setError] = useState("");
+  const [loading, setLoading]   = useState(false);
+  const [sent, setSent]         = useState(false);
+  const [error, setError]       = useState("");
 
   const handleSend = async () => {
     setLoading(true); setError("");
@@ -22,7 +22,7 @@ const SOS = () => {
       await api.post("/notices/sos", { location });
       setSent(true); setOpen(false);
     } catch (e) { setError(e.response?.data?.message || "Failed to send SOS"); }
-    setLoading(false);
+    finally { setLoading(false); }
   };
 
   return (
@@ -36,12 +36,12 @@ const SOS = () => {
           </Typography>
 
           {sent ? (
-            <Alert severity="success" sx={{ mb: 2 }}>
+            <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }}>
               🚨 SOS Alert sent successfully! Security has been notified.
             </Alert>
           ) : (
             <>
-              {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+              {error && <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>}
               <Button
                 variant="contained"
                 size="large"
@@ -53,8 +53,8 @@ const SOS = () => {
                   py: 2, px: 6, fontSize: 20, fontWeight: "bold", borderRadius: 3,
                   animation: "pulse 1.5s infinite",
                   "@keyframes pulse": {
-                    "0%": { boxShadow: "0 0 0 0 rgba(198,40,40,0.7)" },
-                    "70%": { boxShadow: "0 0 0 15px rgba(198,40,40,0)" },
+                    "0%":   { boxShadow: "0 0 0 0 rgba(198,40,40,0.7)" },
+                    "70%":  { boxShadow: "0 0 0 15px rgba(198,40,40,0)" },
                     "100%": { boxShadow: "0 0 0 0 rgba(198,40,40,0)" },
                   },
                 }}
@@ -68,25 +68,39 @@ const SOS = () => {
           )}
 
           {sent && (
-            <Button variant="outlined" color="error" sx={{ mt: 2 }} onClick={() => setSent(false)}>
+            <Button variant="outlined" color="error" sx={{ mt: 2, borderRadius: 2 }} onClick={() => setSent(false)}>
               Send Another Alert
             </Button>
           )}
         </CardContent>
       </Card>
 
-      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>Confirm SOS Alert</DialogTitle>
-        <DialogContent>
+      {/* ── SOS Confirmation Dialog ── */}
+      <Dialog open={open} onClose={() => !loading && setOpen(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+        <Box sx={{ bgcolor: "#c62828", px: 3, py: 2.5, borderRadius: "12px 12px 0 0" }}>
+          <Box display="flex" alignItems="center" gap={1.5}>
+            <WarningIcon sx={{ color: "rgba(255,255,255,0.85)" }} />
+            <Box>
+              <Typography variant="h6" fontWeight="bold" color="white">Confirm SOS Alert</Typography>
+              <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.7)" }}>This will alert all security personnel immediately</Typography>
+            </Box>
+          </Box>
+        </Box>
+        <DialogContent sx={{ pt: 3, pb: 1, px: 3 }}>
           <Typography variant="body2" color="text.secondary" mb={2}>
             Are you sure? This will immediately alert all security personnel.
           </Typography>
-          <TextField fullWidth label="Location / Description (optional)" multiline rows={2} value={location} onChange={(e) => setLocation(e.target.value)} />
+          <TextField fullWidth label="Location / Description (optional)" multiline rows={2}
+            value={location} onChange={(e) => setLocation(e.target.value)} />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpen(false)}>Cancel (False Alarm)</Button>
-          <Button variant="contained" color="error" onClick={handleSend} disabled={loading}>
-            {loading ? "Sending..." : "YES, SEND SOS"}
+        <Divider sx={{ mt: 2 }} />
+        <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
+          <Button onClick={() => setOpen(false)} disabled={loading} sx={{ color: "#555", borderRadius: 2 }}>
+            Cancel (False Alarm)
+          </Button>
+          <Button variant="contained" color="error" onClick={handleSend} disabled={loading}
+            sx={{ borderRadius: 2, px: 3, minWidth: 140 }}>
+            {loading ? <CircularProgress size={18} color="inherit" /> : "YES, SEND SOS"}
           </Button>
         </DialogActions>
       </Dialog>

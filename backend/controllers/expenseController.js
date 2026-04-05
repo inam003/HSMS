@@ -34,11 +34,19 @@ export const getReports = async (req, res) => {
 
   if (type === "income-expense") {
     const Bill = (await import("../models/Bill.js")).default;
-    const paidBills = await Bill.find({ Status: "Paid" });
+    const paidBills = await Bill.find({ Status: "Paid" })
+      .populate({ path: "unit", populate: { path: "resident", select: "Name" } })
+      .sort({ Due_Date: -1 });
     const totalIncome = paidBills.reduce((sum, b) => sum + b.Amount, 0);
-    const expenses = await Expense.find();
+    const unpaidBills = await Bill.find({ Status: "Unpaid" });
+    const totalOutstanding = unpaidBills.reduce((sum, b) => sum + b.Amount, 0);
+    const expenses = await Expense.find().sort({ ExpenseDate: -1 });
     const totalExpenses = expenses.reduce((sum, e) => sum + e.Amount, 0);
-    return res.json({ totalIncome, totalExpenses, balance: totalIncome - totalExpenses, paidBills, expenses });
+    return res.json({
+      totalIncome, totalExpenses, balance: totalIncome - totalExpenses,
+      totalOutstanding, unpaidCount: unpaidBills.length,
+      paidBills, expenses,
+    });
   }
 
   res.status(400).json({ message: "Invalid report type. Use: defaulters or income-expense" });
