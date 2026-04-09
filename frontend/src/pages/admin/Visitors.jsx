@@ -1,18 +1,26 @@
 import { useEffect, useState } from "react";
 import {
   Box, Typography, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Paper, Chip
+  TableHead, TableRow, Paper, Chip, CircularProgress
 } from "@mui/material";
 import api from "../../api/axios";
 
 const Visitors = () => {
   const [visitors, setVisitors] = useState([]);
+  const [loading, setLoading]   = useState(true);
 
   useEffect(() => {
     api.get("/visitors")
       .then(({ data }) => setVisitors(data))
-      .catch(() => setVisitors([]));
+      .catch(() => setVisitors([]))
+      .finally(() => setLoading(false));
   }, []);
+
+  if (loading) return (
+    <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+      <CircularProgress sx={{ color: "#1a237e" }} />
+    </Box>
+  );
 
   return (
     <Box>

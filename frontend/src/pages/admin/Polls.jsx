@@ -40,8 +40,12 @@ const Polls = () => {
   const [saving, setSaving]             = useState(false);
   const [selectedPoll, setSelectedPoll] = useState(null);
   const [pollDetails, setPollDetails]   = useState(null);
+  const [loading, setLoading]           = useState(true);
 
-  const load = async () => { const { data } = await api.get("/polls"); setPolls(data); };
+  const load = async () => {
+    try { const { data } = await api.get("/polls"); setPolls(data); }
+    finally { setLoading(false); }
+  };
   useEffect(() => { load(); }, []);
 
   const loadDetails = async (id) => {
@@ -81,6 +85,12 @@ const Polls = () => {
   };
 
   const totalVotes = pollDetails?.options?.reduce((s, o) => s + o.VoteCount, 0) || 0;
+
+  if (loading) return (
+    <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+      <CircularProgress sx={{ color: "#1a237e" }} />
+    </Box>
+  );
 
   return (
     <Box>

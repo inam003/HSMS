@@ -36,10 +36,13 @@ const Visitors = () => {
   const [success, setSuccess]     = useState("");
   const [submitError, setSubmitError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading]       = useState(true);
 
   const load = async () => {
-    const [a, u] = await Promise.all([api.get("/visitors/my-pre-approvals"), api.get("/units")]);
-    setApprovals(a.data); setUnits(u.data);
+    try {
+      const [a, u] = await Promise.all([api.get("/visitors/my-pre-approvals"), api.get("/units")]);
+      setApprovals(a.data); setUnits(u.data);
+    } finally { setLoading(false); }
   };
   useEffect(() => { load(); }, []);
 
@@ -67,6 +70,12 @@ const Visitors = () => {
     } catch (e) { setSubmitError(e.response?.data?.message || "Error"); }
     finally { setSubmitting(false); }
   };
+
+  if (loading) return (
+    <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+      <CircularProgress sx={{ color: "#1a237e" }} />
+    </Box>
+  );
 
   return (
     <Box>

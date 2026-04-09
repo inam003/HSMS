@@ -2,14 +2,36 @@ import { useEffect, useState } from "react";
 import {
   Box, Typography, Button, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Paper, Alert, Chip, Card, CardContent,
-  TextField, Dialog, DialogContent, DialogActions, Divider, CircularProgress
+  TextField, Dialog, DialogContent, DialogActions, Divider, CircularProgress,
+  Grid
 } from "@mui/material";
-import LoginIcon from "@mui/icons-material/Login";
-import LogoutIcon from "@mui/icons-material/Logout";
-import EditIcon from "@mui/icons-material/Edit";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import UpdateIcon from "@mui/icons-material/Update";
+import LoginIcon        from "@mui/icons-material/Login";
+import LogoutIcon       from "@mui/icons-material/Logout";
+import EditIcon         from "@mui/icons-material/Edit";
+import AccessTimeIcon   from "@mui/icons-material/AccessTime";
+import UpdateIcon       from "@mui/icons-material/Update";
+import CheckCircleIcon  from "@mui/icons-material/CheckCircle";
+import EventNoteIcon    from "@mui/icons-material/EventNote";
+import BadgeIcon        from "@mui/icons-material/Badge";
 import api from "../../api/axios";
+
+const StatCard = ({ label, value, color, bg, icon }) => (
+  <Card sx={{ borderRadius: 2, borderLeft: `5px solid ${color}`,
+    boxShadow: "0 2px 12px rgba(0,0,0,0.08)", height: "100%" }}>
+    <CardContent sx={{ p: 2.5 }}>
+      <Box display="flex" justifyContent="space-between" alignItems="center">
+        <Box>
+          <Typography variant="body2" color="text.secondary" fontWeight="medium" mb={0.5}>{label}</Typography>
+          <Typography variant="h3" fontWeight="bold" color={color} lineHeight={1}>{value}</Typography>
+        </Box>
+        <Box sx={{ bgcolor: bg, borderRadius: "50%", width: 48, height: 48, flexShrink: 0,
+          display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Box sx={{ color, display: "flex", "& svg": { fontSize: 24 } }}>{icon}</Box>
+        </Box>
+      </Box>
+    </CardContent>
+  </Card>
+);
 
 const ModalHeader = ({ icon, title, subtitle, color = "#2e7d32" }) => (
   <Box sx={{ bgcolor: color, px: 3, py: 2.5, borderRadius: "12px 12px 0 0" }}>
@@ -28,6 +50,7 @@ const StaffAttendance = () => {
   const [todayRecord, setTodayRecord] = useState(null);
   const [notes, setNotes]             = useState("");
   const [noteOpen, setNoteOpen]       = useState(false);
+  const [loading, setLoading]         = useState(true);
   const [noteAction, setNoteAction]   = useState(""); // "checkin" | "checkout"
   const [success, setSuccess]         = useState("");
   const [error, setError]             = useState("");
@@ -38,10 +61,12 @@ const StaffAttendance = () => {
   const [updating, setUpdating]       = useState(false);
 
   const load = async () => {
-    const { data } = await api.get("/staff/attendance/my");
-    setAttendance(data);
-    const today = new Date().toDateString();
-    setTodayRecord(data.find((r) => new Date(r.Date).toDateString() === today) || null);
+    try {
+      const { data } = await api.get("/staff/attendance/my");
+      setAttendance(data);
+      const today = new Date().toDateString();
+      setTodayRecord(data.find((r) => new Date(r.Date).toDateString() === today) || null);
+    } finally { setLoading(false); }
   };
   useEffect(() => { load(); }, []);
 
@@ -90,6 +115,12 @@ const StaffAttendance = () => {
   const isCheckin       = noteAction === "checkin";
   const actionColor     = isCheckin ? "#2e7d32" : "#c62828";
 
+  if (loading) return (
+    <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+      <CircularProgress sx={{ color: "#1a237e" }} />
+    </Box>
+  );
+
   return (
     <Box>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
@@ -130,25 +161,33 @@ const StaffAttendance = () => {
       </Card>
 
       {/* Summary Stats */}
-      <Box display="flex" gap={2} mb={3} flexWrap="wrap">
-        {[
-          { count: presentCount, label: "Present",      color: "#2e7d32", bg: "#e8f5e9" },
-          { count: halfDayCount, label: "Half-Day",     color: "#f57f17", bg: "#fff8e1" },
-          { count: absentCount,  label: "Absent",       color: "#c62828", bg: "#fce4ec" },
-          { count: attendance.length, label: "Total Records", color: "#1565c0", bg: "#e3f2fd" },
-        ].map(({ count, label, color, bg }) => (
-          <Paper key={label} sx={{ p: 2, borderRadius: 2, flex: 1, minWidth: 120, textAlign: "center", bgcolor: bg }}>
-            <Typography variant="h4" fontWeight="bold" color={color}>{count}</Typography>
-            <Typography variant="body2">{label}</Typography>
-          </Paper>
-        ))}
-      </Box>
+      <Grid container spacing={2} mb={3}>
+        <Grid item xs={6} sm={3}>
+          <StatCard label="Days Present"  value={presentCount}      color="#2e7d32" bg="#e8f5e9" icon={<CheckCircleIcon />} />
+        </Grid>
+        <Grid item xs={6} sm={3}>
+          <StatCard label="Half Days"     value={halfDayCount}      color="#f57f17" bg="#fff8e1" icon={<AccessTimeIcon />} />
+        </Grid>
+        <Grid item xs={6} sm={3}>
+          <StatCard label="Absent"        value={absentCount}       color="#c62828" bg="#ffebee" icon={<EventNoteIcon />} />
+        </Grid>
+        <Grid item xs={6} sm={3}>
+          <StatCard label="Total Records" value={attendance.length} color="#1565c0" bg="#e3f2fd" icon={<BadgeIcon />} />
+        </Grid>
+      </Grid>
 
       {/* Attendance History */}
-      <Typography variant="h6" fontWeight="bold" mb={1}>Attendance History</Typography>
-      <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
+      <Card sx={{ borderRadius: 2, boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
+        <Box sx={{ bgcolor: "#4527a0", px: 2.5, py: 1.8, borderRadius: "8px 8px 0 0",
+          display: "flex", alignItems: "center", gap: 1 }}>
+          <Box sx={{ bgcolor: "rgba(255,255,255,0.15)", borderRadius: 1.5, p: 0.7, display: "flex" }}>
+            <EventNoteIcon sx={{ color: "white", fontSize: 18 }} />
+          </Box>
+          <Typography variant="h6" fontWeight="bold" color="white">Attendance History</Typography>
+        </Box>
+      <TableContainer sx={{ borderRadius: "0 0 8px 8px" }}>
         <Table>
-          <TableHead sx={{ bgcolor: "#4527a0" }}>
+          <TableHead sx={{ bgcolor: "#2e7d32" }}>
             <TableRow>
               {["Date", "Check-In", "Check-Out", "Hours Worked", "Status", "Notes"].map((h) => (
                 <TableCell key={h} sx={{ color: "white", fontWeight: "bold" }}>{h}</TableCell>
@@ -174,6 +213,7 @@ const StaffAttendance = () => {
           </TableBody>
         </Table>
       </TableContainer>
+      </Card>
 
       {/* ── Check-In / Check-Out Notes Dialog ── */}
       <Dialog open={noteOpen} onClose={() => !submitting && setNoteOpen(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>

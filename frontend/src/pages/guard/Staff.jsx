@@ -2,10 +2,30 @@ import { useEffect, useState } from "react";
 import {
   Box, Typography, Button, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Paper, Dialog, DialogContent, DialogActions,
-  TextField, Alert, Chip, Divider, CircularProgress
+  TextField, Alert, Chip, Divider, CircularProgress, Grid, Card, CardContent
 } from "@mui/material";
-import KeyIcon from "@mui/icons-material/Key";
+import KeyIcon        from "@mui/icons-material/Key";
+import BadgeIcon      from "@mui/icons-material/Badge";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import api from "../../api/axios";
+
+const StatCard = ({ label, value, color, bg, icon }) => (
+  <Card sx={{ borderRadius: 2, borderLeft: `5px solid ${color}`,
+    boxShadow: "0 2px 12px rgba(0,0,0,0.08)", height: "100%" }}>
+    <CardContent sx={{ p: 2.5 }}>
+      <Box display="flex" justifyContent="space-between" alignItems="center">
+        <Box>
+          <Typography variant="body2" color="text.secondary" fontWeight="medium" mb={0.5}>{label}</Typography>
+          <Typography variant="h3" fontWeight="bold" color={color} lineHeight={1}>{value}</Typography>
+        </Box>
+        <Box sx={{ bgcolor: bg, borderRadius: "50%", width: 48, height: 48, flexShrink: 0,
+          display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Box sx={{ color, display: "flex", "& svg": { fontSize: 24 } }}>{icon}</Box>
+        </Box>
+      </Box>
+    </CardContent>
+  </Card>
+);
 
 const ModalHeader = ({ icon, title, subtitle, color = "#4527a0" }) => (
   <Box sx={{ bgcolor: color, px: 3, py: 2.5, borderRadius: "12px 12px 0 0" }}>
@@ -30,7 +50,13 @@ const GuardStaff = () => {
   const [validating, setValidating] = useState(false);
   const [confirming, setConfirming] = useState(false);
 
-  useEffect(() => { api.get("/staff").then(({ data }) => setStaff(data)); }, []);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.get("/staff")
+      .then(({ data }) => setStaff(data))
+      .finally(() => setLoading(false));
+  }, []);
 
   const codeFieldError = codeTouched && !code.trim() ? "Entry code is required" : "";
 
@@ -58,6 +84,12 @@ const GuardStaff = () => {
     setCode(""); setValidated(null); setCodeError(""); setCodeTouched(false); setCodeOpen(true);
   };
 
+  if (loading) return (
+    <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+      <CircularProgress sx={{ color: "#4527a0" }} />
+    </Box>
+  );
+
   return (
     <Box>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
@@ -67,6 +99,15 @@ const GuardStaff = () => {
         </Button>
       </Box>
       {success && <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSuccess("")}>{success}</Alert>}
+
+      <Grid container spacing={2} mb={3}>
+        <Grid item xs={6}>
+          <StatCard label="Total Staff & Vendors" value={staff.length} color="#4527a0" bg="#ede7f6" icon={<BadgeIcon />} />
+        </Grid>
+        <Grid item xs={6}>
+          <StatCard label="Active Entry Codes" value={staff.filter((s) => s.Entry_Code).length} color="#2e7d32" bg="#e8f5e9" icon={<CheckCircleIcon />} />
+        </Grid>
+      </Grid>
 
       <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
         <Table>

@@ -3,11 +3,32 @@ import {
   Box, Typography, Button, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Paper, Dialog, DialogContent, DialogActions,
   TextField, Alert, Chip, Tabs, Tab, Select, MenuItem, FormControl, InputLabel,
-  FormHelperText, Divider, CircularProgress
+  FormHelperText, Divider, CircularProgress, Grid, Card, CardContent
 } from "@mui/material";
-import LoginIcon from "@mui/icons-material/Login";
-import LogoutIcon from "@mui/icons-material/Logout";
+import LoginIcon    from "@mui/icons-material/Login";
+import LogoutIcon   from "@mui/icons-material/Logout";
+import PeopleIcon   from "@mui/icons-material/People";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import VerifiedIcon from "@mui/icons-material/Verified";
 import api from "../../api/axios";
+
+const StatCard = ({ label, value, color, bg, icon }) => (
+  <Card sx={{ borderRadius: 2, borderLeft: `5px solid ${color}`,
+    boxShadow: "0 2px 12px rgba(0,0,0,0.08)", height: "100%" }}>
+    <CardContent sx={{ p: 2.5 }}>
+      <Box display="flex" justifyContent="space-between" alignItems="center">
+        <Box>
+          <Typography variant="body2" color="text.secondary" fontWeight="medium" mb={0.5}>{label}</Typography>
+          <Typography variant="h3" fontWeight="bold" color={color} lineHeight={1}>{value}</Typography>
+        </Box>
+        <Box sx={{ bgcolor: bg, borderRadius: "50%", width: 48, height: 48, flexShrink: 0,
+          display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Box sx={{ color, display: "flex", "& svg": { fontSize: 24 } }}>{icon}</Box>
+        </Box>
+      </Box>
+    </CardContent>
+  </Card>
+);
 
 const ModalHeader = ({ icon, title, subtitle, color = "#2e7d32" }) => (
   <Box sx={{ bgcolor: color, px: 3, py: 2.5, borderRadius: "12px 12px 0 0" }}>
@@ -37,10 +58,13 @@ const GuardVisitors = () => {
   const [success, setSuccess]   = useState("");
   const [submitError, setSubmitError] = useState("");
   const [entering, setEntering] = useState(false);
+  const [loading, setLoading]   = useState(true);
 
   const load = async () => {
-    const [v, u] = await Promise.all([api.get("/visitors"), api.get("/units")]);
-    setVisitors(v.data); setUnits(u.data);
+    try {
+      const [v, u] = await Promise.all([api.get("/visitors"), api.get("/units")]);
+      setVisitors(v.data); setUnits(u.data);
+    } finally { setLoading(false); }
   };
   useEffect(() => { load(); }, []);
 
@@ -75,8 +99,17 @@ const GuardVisitors = () => {
     setSuccess("Exit recorded!"); load();
   };
 
-  const inside = visitors.filter((v) => !v.CheckOut_Time && v.CheckIn_Time);
-  const all    = visitors;
+  const inside       = visitors.filter((v) => !v.CheckOut_Time && v.CheckIn_Time);
+  const all          = visitors;
+  const today        = new Date().toDateString();
+  const todayVisitors = visitors.filter((v) => v.CheckIn_Time && new Date(v.CheckIn_Time).toDateString() === today);
+  const preApprovedToday = todayVisitors.filter((v) => v.isPreApproved).length;
+
+  if (loading) return (
+    <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+      <CircularProgress sx={{ color: "#1a237e" }} />
+    </Box>
+  );
 
   return (
     <Box>
@@ -86,6 +119,18 @@ const GuardVisitors = () => {
           sx={{ bgcolor: "#2e7d32", borderRadius: 2 }}>Log Entry</Button>
       </Box>
       {success && <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSuccess("")}>{success}</Alert>}
+
+      <Grid container spacing={2} mb={3}>
+        <Grid item xs={4}>
+          <StatCard label="Currently Inside" value={inside.length} color="#1565c0" bg="#e3f2fd" icon={<PeopleIcon />} />
+        </Grid>
+        <Grid item xs={4}>
+          <StatCard label="Visitors Today"   value={todayVisitors.length} color="#4527a0" bg="#ede7f6" icon={<CheckCircleIcon />} />
+        </Grid>
+        <Grid item xs={4}>
+          <StatCard label="Pre-Approved"     value={preApprovedToday} color="#2e7d32" bg="#e8f5e9" icon={<VerifiedIcon />} />
+        </Grid>
+      </Grid>
 
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
         <Tab label={`Currently Inside (${inside.length})`} />

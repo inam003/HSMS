@@ -43,10 +43,13 @@ const Members = () => {
   const [deleting, setDeleting] = useState(false);
   // Delete modal state
   const [deleteTarget, setDeleteTarget] = useState(null); // { id, name }
+  const [loading, setLoading]           = useState(true);
 
   const load = async () => {
-    const { data } = await api.get("/residents");
-    setResidents(data);
+    try {
+      const { data } = await api.get("/residents");
+      setResidents(data);
+    } finally { setLoading(false); }
   };
 
   useEffect(() => { load(); }, []);
@@ -104,6 +107,12 @@ const Members = () => {
   };
 
   /* ─────────────────────────────────────────────────────────────────── */
+  if (loading) return (
+    <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+      <CircularProgress sx={{ color: "#1a237e" }} />
+    </Box>
+  );
+
   return (
     <Box>
       {/* Header */}

@@ -47,8 +47,12 @@ const Complaints = () => {
   const [submitError, setSubmitError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [sendingFeedback, setSendingFeedback] = useState(false);
+  const [loading, setLoading]               = useState(true);
 
-  const load = async () => { const { data } = await api.get("/complaints"); setComplaints(data); };
+  const load = async () => {
+    try { const { data } = await api.get("/complaints"); setComplaints(data); }
+    finally { setLoading(false); }
+  };
   useEffect(() => { load(); }, []);
 
   // Submit validation
@@ -87,6 +91,12 @@ const Complaints = () => {
     finally { setSendingFeedback(false); }
   };
 
+  if (loading) return (
+    <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+      <CircularProgress sx={{ color: "#1a237e" }} />
+    </Box>
+  );
+
   return (
     <Box>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
@@ -98,35 +108,65 @@ const Complaints = () => {
       {success && <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSuccess("")}>{success}</Alert>}
 
       <Grid container spacing={2}>
-        {complaints.map((c) => (
-          <Grid item xs={12} md={6} key={c._id}>
-            <Card sx={{ borderRadius: 2 }}>
-              <CardContent>
-                <Box display="flex" justifyContent="space-between" mb={1}>
-                  <Chip label={c.Category} size="small" />
-                  <Chip label={c.Status} color={statusColors[c.Status]} size="small" />
+        {complaints.map((c) => {
+          const headerColor = c.Status === "Resolved" ? "#2e7d32" : c.Status === "In Progress" ? "#1565c0" : "#e65100";
+          return (
+            <Grid item xs={12} md={6} key={c._id}>
+              <Card sx={{ borderRadius: 2, boxShadow: "0 2px 12px rgba(0,0,0,0.08)", height: "100%", display: "flex", flexDirection: "column" }}>
+                {/* Colored header */}
+                <Box sx={{ bgcolor: headerColor, borderRadius: "8px 8px 0 0", px: 2.5, py: 1.5,
+                  display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <Chip label={c.Category} size="small"
+                    sx={{ bgcolor: "rgba(255,255,255,0.2)", color: "white", fontWeight: "bold", border: "none" }} />
+                  <Chip label={c.Status} size="small"
+                    sx={{ bgcolor: "rgba(255,255,255,0.25)", color: "white", fontWeight: "bold", border: "none" }} />
                 </Box>
-                <Typography variant="body2" mb={1}>{c.Description}</Typography>
-                <Stepper activeStep={steps.indexOf(c.Status)} alternativeLabel sx={{ mt: 1 }}>
-                  {steps.map((s) => <Step key={s}><StepLabel>{s}</StepLabel></Step>)}
-                </Stepper>
-                {c.assignedTo && <Typography variant="caption">Assigned to: {c.assignedTo.Name}</Typography>}
-                {c.feedback && <Typography variant="caption" display="block" color="text.secondary">Your feedback: {c.feedback}</Typography>}
-                <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
-                  {new Date(c.createdAt).toLocaleDateString()}
-                </Typography>
-              </CardContent>
-              {c.Status === "Resolved" && !c.feedback && (
-                <CardActions>
-                  <Button size="small" onClick={() => { setFeedbackId(c._id); setFeedback(""); setFbTouched(false); }}>
-                    Submit Feedback
-                  </Button>
-                </CardActions>
-              )}
-            </Card>
+
+                <CardContent sx={{ flex: 1, pt: 2 }}>
+                  <Typography variant="body2" color="text.primary" sx={{ lineHeight: 1.6, mb: 2 }}>
+                    {c.Description}
+                  </Typography>
+
+                  <Stepper activeStep={steps.indexOf(c.Status)} alternativeLabel
+                    sx={{ "& .MuiStepLabel-label": { fontSize: 11 } }}>
+                    {steps.map((s) => <Step key={s}><StepLabel>{s}</StepLabel></Step>)}
+                  </Stepper>
+
+                  <Box sx={{ mt: 1.5, pt: 1.5, borderTop: "1px solid #f5f5f5" }}>
+                    {c.assignedTo && (
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        Assigned to: <strong>{c.assignedTo.Name}</strong>
+                      </Typography>
+                    )}
+                    {c.feedback && (
+                      <Typography variant="caption" display="block" color="text.secondary" sx={{ mt: 0.5 }}>
+                        Your feedback: {c.feedback}
+                      </Typography>
+                    )}
+                    <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+                      Submitted: {new Date(c.createdAt).toLocaleDateString()}
+                    </Typography>
+                  </Box>
+                </CardContent>
+
+                {c.Status === "Resolved" && !c.feedback && (
+                  <Box sx={{ px: 2, pb: 2 }}>
+                    <Button fullWidth size="small" variant="outlined"
+                      onClick={() => { setFeedbackId(c._id); setFeedback(""); setFbTouched(false); }}
+                      sx={{ borderColor: "#2e7d32", color: "#2e7d32", borderRadius: 2 }}>
+                      Submit Feedback
+                    </Button>
+                  </Box>
+                )}
+              </Card>
+            </Grid>
+          );
+        })}
+        {!complaints.length && (
+          <Grid item xs={12}>
+            <Typography color="text.secondary" align="center" sx={{ py: 4 }}>No complaints submitted</Typography>
           </Grid>
-        ))}
-        {!complaints.length && <Grid item xs={12}><Typography color="text.secondary" align="center" sx={{ py: 4 }}>No complaints submitted</Typography></Grid>}
+        )}
       </Grid>
 
       {/* ── Submit Complaint Dialog ── */}

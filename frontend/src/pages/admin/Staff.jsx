@@ -46,8 +46,12 @@ const Staff = () => {
   const [saving, setSaving]             = useState(false);
   const [deleting, setDeleting]         = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [loading, setLoading]           = useState(true);
 
-  const load = async () => { const { data } = await api.get("/staff"); setStaff(data); };
+  const load = async () => {
+    try { const { data } = await api.get("/staff"); setStaff(data); }
+    finally { setLoading(false); }
+  };
   useEffect(() => { load(); }, []);
 
   const errors  = validate(form, editId);
@@ -98,6 +102,12 @@ const Staff = () => {
     finally { setDeleting(false); setDeleteTarget(null); }
   };
 
+  if (loading) return (
+    <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+      <CircularProgress sx={{ color: "#1a237e" }} />
+    </Box>
+  );
+
   return (
     <Box>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
@@ -112,7 +122,7 @@ const Staff = () => {
         <Table>
           <TableHead sx={{ bgcolor: "#1a237e" }}>
             <TableRow>
-              {["Name", "Type", "Email", "CNIC/Aadhar", "Entry Code", "Rating", "Actions"].map((h) => (
+              {["Name", "Type", "Email", "CNIC", "Entry Code", "Rating", "Actions"].map((h) => (
                 <TableCell key={h} sx={{ color: "white", fontWeight: "bold" }}>{h}</TableCell>
               ))}
             </TableRow>
@@ -157,7 +167,7 @@ const Staff = () => {
           <Box display="flex" gap={2} mb={1}>
             <TextField fullWidth label="Type (e.g. Maid, Driver, Plumber)" required value={form.Type}
               onChange={(e) => setForm({ ...form, Type: e.target.value })} {...field("Type")} />
-            <TextField fullWidth label="CNIC / Aadhar Number" value={form.Aadhar_CNIC_No}
+            <TextField fullWidth label="CNIC Number" value={form.Aadhar_CNIC_No}
               onChange={(e) => setForm({ ...form, Aadhar_CNIC_No: e.target.value })} helperText=" " />
           </Box>
           <Box mb={1}>

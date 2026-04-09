@@ -3,11 +3,12 @@ import {
   Box, Typography, Button, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Paper, Dialog, DialogContent, DialogActions,
   Alert, Chip, Select, MenuItem, FormControl, InputLabel, FormHelperText,
-  Divider, CircularProgress
+  Divider, CircularProgress, Card, CardContent, Grid
 } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import CancelIcon from "@mui/icons-material/Cancel";
-import RouteIcon from "@mui/icons-material/Route";
+import CancelIcon      from "@mui/icons-material/Cancel";
+import RouteIcon       from "@mui/icons-material/Route";
+import SensorsIcon     from "@mui/icons-material/Sensors";
 import api from "../../api/axios";
 
 const CHECKPOINTS = [
@@ -40,8 +41,14 @@ const GuardPatrol = () => {
   const [success, setSuccess] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [logging, setLogging] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const load = () => { api.get("/patrol/my-logs").then(({ data }) => setLogs(data)).catch(() => {}); };
+  const load = () => {
+    api.get("/patrol/my-logs")
+      .then(({ data }) => setLogs(data))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  };
   useEffect(() => { load(); }, []);
 
   const errors  = validate(form);
@@ -68,6 +75,12 @@ const GuardPatrol = () => {
   const completedToday = todayLogs.filter((l) => l.Status === "Completed").length;
   const skippedToday   = todayLogs.filter((l) => l.Status === "Skipped").length;
 
+  if (loading) return (
+    <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+      <CircularProgress sx={{ color: "#4527a0" }} />
+    </Box>
+  );
+
   return (
     <Box>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
@@ -77,20 +90,31 @@ const GuardPatrol = () => {
       </Box>
       {success && <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSuccess("")}>{success}</Alert>}
 
-      <Box display="flex" gap={2} mb={3}>
-        <Paper sx={{ p: 2, borderRadius: 2, flex: 1, textAlign: "center", bgcolor: "#e8f5e9" }}>
-          <Typography variant="h4" fontWeight="bold" color="#2e7d32">{completedToday}</Typography>
-          <Typography variant="body2" color="text.secondary">Completed Today</Typography>
-        </Paper>
-        <Paper sx={{ p: 2, borderRadius: 2, flex: 1, textAlign: "center", bgcolor: "#ffebee" }}>
-          <Typography variant="h4" fontWeight="bold" color="#c62828">{skippedToday}</Typography>
-          <Typography variant="body2" color="text.secondary">Skipped Today</Typography>
-        </Paper>
-        <Paper sx={{ p: 2, borderRadius: 2, flex: 1, textAlign: "center", bgcolor: "#e3f2fd" }}>
-          <Typography variant="h4" fontWeight="bold" color="#1565c0">{todayLogs.length}</Typography>
-          <Typography variant="body2" color="text.secondary">Total Logs Today</Typography>
-        </Paper>
-      </Box>
+      <Grid container spacing={2} mb={3}>
+        {[
+          { label: "Completed Today", value: completedToday,   color: "#2e7d32", bg: "#e8f5e9", icon: <CheckCircleIcon /> },
+          { label: "Skipped Today",   value: skippedToday,     color: "#c62828", bg: "#ffebee", icon: <CancelIcon /> },
+          { label: "Total Logs",      value: todayLogs.length, color: "#1565c0", bg: "#e3f2fd", icon: <SensorsIcon /> },
+        ].map(({ label, value, color, bg, icon }) => (
+          <Grid item xs={4} key={label}>
+            <Card sx={{ borderRadius: 2, borderLeft: `5px solid ${color}`,
+              boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
+              <CardContent sx={{ p: 2.5 }}>
+                <Box display="flex" justifyContent="space-between" alignItems="center">
+                  <Box>
+                    <Typography variant="body2" color="text.secondary" fontWeight="medium" mb={0.5}>{label}</Typography>
+                    <Typography variant="h3" fontWeight="bold" color={color} lineHeight={1}>{value}</Typography>
+                  </Box>
+                  <Box sx={{ bgcolor: bg, borderRadius: "50%", width: 48, height: 48, flexShrink: 0,
+                    display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <Box sx={{ color, display: "flex", "& svg": { fontSize: 24 } }}>{icon}</Box>
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
 
       <Typography variant="h6" fontWeight="bold" mb={1}>Patrol Log History</Typography>
       <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>

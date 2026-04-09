@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   Box, Typography, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Paper, Chip, Grid, Card, CardContent
+  TableHead, TableRow, Paper, Chip, Grid, Card, CardContent, CircularProgress
 } from "@mui/material";
 import RouteIcon          from "@mui/icons-material/Route";
 import CheckCircleIcon    from "@mui/icons-material/CheckCircle";
@@ -46,6 +46,7 @@ const SectionHeader = ({ icon, title, color }) => (
 const Patrols = () => {
   const [logs, setLogs]         = useState([]);
   const [visitors, setVisitors] = useState([]);
+  const [loading, setLoading]   = useState(true);
 
   useEffect(() => {
     api.get("/patrol/gate-logs")
@@ -53,7 +54,8 @@ const Patrols = () => {
         setLogs(data.patrolStatus || []);
         setVisitors(data.accessLogs || []);
       })
-      .catch(() => { setLogs([]); setVisitors([]); });
+      .catch(() => { setLogs([]); setVisitors([]); })
+      .finally(() => setLoading(false));
   }, []);
 
   const today        = new Date().toDateString();
@@ -62,6 +64,12 @@ const Patrols = () => {
   const skippedToday   = todayLogs.filter((l) => l.Status === "Skipped").length;
   const insideNow      = visitors.filter((v) => !v.CheckOut_Time).length;
   const todayAccess    = visitors.filter((v) => new Date(v.CheckIn_Time).toDateString() === today).length;
+
+  if (loading) return (
+    <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+      <CircularProgress sx={{ color: "#1a237e" }} />
+    </Box>
+  );
 
   return (
     <Box>
