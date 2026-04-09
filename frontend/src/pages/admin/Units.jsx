@@ -37,10 +37,13 @@ const Units = () => {
   const [error, setError]       = useState("");
   const [saving, setSaving]     = useState(false);
   const [assigning, setAssigning] = useState(false);
+  const [loading, setLoading]     = useState(true);
 
   const load = async () => {
-    const [u, r] = await Promise.all([api.get("/units"), api.get("/residents")]);
-    setUnits(u.data); setResidents(r.data);
+    try {
+      const [u, r] = await Promise.all([api.get("/units"), api.get("/residents")]);
+      setUnits(u.data); setResidents(r.data);
+    } finally { setLoading(false); }
   };
   useEffect(() => { load(); }, []);
 
@@ -62,6 +65,12 @@ const Units = () => {
     } catch (e) { setError(e.response?.data?.message || "Error"); }
     finally { setAssigning(false); }
   };
+
+  if (loading) return (
+    <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+      <CircularProgress sx={{ color: "#1a237e" }} />
+    </Box>
+  );
 
   return (
     <Box>

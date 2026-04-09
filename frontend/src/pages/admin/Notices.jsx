@@ -43,8 +43,12 @@ const Notices = () => {
   const [saving, setSaving]         = useState(false);
   const [deleting, setDeleting]     = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [loading, setLoading]           = useState(true);
 
-  const load = async () => { const { data } = await api.get("/notices"); setNotices(data); };
+  const load = async () => {
+    try { const { data } = await api.get("/notices"); setNotices(data); }
+    finally { setLoading(false); }
+  };
   useEffect(() => { load(); }, []);
 
   const errors  = validate(form);
@@ -93,6 +97,12 @@ const Notices = () => {
     } catch { /* ignore */ }
     finally { setDeleting(false); setDeleteTarget(null); }
   };
+
+  if (loading) return (
+    <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+      <CircularProgress sx={{ color: "#1a237e" }} />
+    </Box>
+  );
 
   return (
     <Box>

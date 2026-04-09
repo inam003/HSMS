@@ -38,10 +38,13 @@ const Amenities = () => {
   const [success, setSuccess]   = useState("");
   const [submitError, setSubmitError] = useState("");
   const [booking, setBooking]   = useState(false);
+  const [loading, setLoading]   = useState(true);
 
   const load = async () => {
-    const [a, b] = await Promise.all([api.get("/amenities"), api.get("/amenities/bookings")]);
-    setAmenities(a.data); setBookings(b.data);
+    try {
+      const [a, b] = await Promise.all([api.get("/amenities"), api.get("/amenities/bookings")]);
+      setAmenities(a.data); setBookings(b.data);
+    } finally { setLoading(false); }
   };
   useEffect(() => { load(); }, []);
 
@@ -75,6 +78,12 @@ const Amenities = () => {
     await api.put(`/amenities/bookings/${id}`, { Status: "Cancelled" }); load();
   };
 
+  if (loading) return (
+    <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+      <CircularProgress sx={{ color: "#1a237e" }} />
+    </Box>
+  );
+
   return (
     <Box>
       <Typography variant="h5" fontWeight="bold" mb={2}>Amenity Booking</Typography>
@@ -89,24 +98,50 @@ const Amenities = () => {
         <Grid container spacing={2}>
           {amenities.map((a) => (
             <Grid item xs={12} sm={6} md={4} key={a._id}>
-              <Card sx={{ borderRadius: 2 }}>
-                <CardContent>
-                  <Box display="flex" alignItems="center" gap={1} mb={1}>
-                    <SpaIcon color="primary" />
-                    <Typography variant="h6">{a.Name}</Typography>
+              <Card sx={{ borderRadius: 2, boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+                height: "100%", display: "flex", flexDirection: "column" }}>
+                {/* Blue header */}
+                <Box sx={{ bgcolor: "#1a237e", borderRadius: "8px 8px 0 0", px: 2.5, py: 2 }}>
+                  <Typography variant="h6" fontWeight="bold" color="white" noWrap>{a.Name}</Typography>
+                </Box>
+                <CardContent sx={{ flex: 1, pt: 2 }}>
+                  {/* Info pills */}
+                  <Box display="flex" gap={1} mb={1.5} flexWrap="wrap">
+                    <Box sx={{ bgcolor: "#e8eaf6", borderRadius: 1.5, px: 1.5, py: 0.5,
+                      display: "flex", alignItems: "center", gap: 0.5 }}>
+                      <Typography variant="caption" color="#1a237e" fontWeight="bold">Capacity</Typography>
+                      <Typography variant="caption" fontWeight="bold">{a.Capacity} persons</Typography>
+                    </Box>
+                    <Box sx={{ bgcolor: "#e8f5e9", borderRadius: 1.5, px: 1.5, py: 0.5,
+                      display: "flex", alignItems: "center", gap: 0.5 }}>
+                      <Typography variant="caption" color="#2e7d32" fontWeight="bold">Fee</Typography>
+                      <Typography variant="caption" fontWeight="bold">
+                        PKR {Number(a.Booking_Fee).toLocaleString()}
+                      </Typography>
+                    </Box>
                   </Box>
-                  <Typography variant="body2">Capacity: {a.Capacity} persons</Typography>
-                  <Typography variant="body2">Booking Fee: PKR {a.Booking_Fee}</Typography>
-                  <Typography variant="body2" color="text.secondary">{a.Description}</Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ minHeight: 40 }}>
+                    {a.Description || "No description provided."}
+                  </Typography>
                 </CardContent>
-                <CardActions>
-                  <Button variant="contained" size="small" onClick={() => openBook(a)}
-                    sx={{ bgcolor: "#1a237e", borderRadius: 2 }}>Book Now</Button>
-                </CardActions>
+                <Box sx={{ px: 2, pb: 2 }}>
+                  <Button fullWidth variant="contained" onClick={() => openBook(a)}
+                    sx={{ bgcolor: "#1a237e", borderRadius: 2, "&:hover": { bgcolor: "#283593" } }}>
+                    Book Now
+                  </Button>
+                </Box>
               </Card>
             </Grid>
           ))}
-          {!amenities.length && <Grid item xs={12}><Typography align="center" color="text.secondary" sx={{ py: 4 }}>No amenities available</Typography></Grid>}
+          {!amenities.length && (
+            <Grid item xs={12}>
+              <Box sx={{ textAlign: "center", py: 8 }}>
+                <SpaIcon sx={{ fontSize: 56, color: "#ddd", mb: 2 }} />
+                <Typography variant="h6" color="text.secondary">No Amenities Available</Typography>
+                <Typography variant="body2" color="text.secondary">Check back later</Typography>
+              </Box>
+            </Grid>
+          )}
         </Grid>
       )}
 

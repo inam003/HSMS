@@ -38,8 +38,12 @@ const Bills = () => {
   const [success, setSuccess]   = useState("");
   const [error, setError]       = useState("");
   const [paying, setPaying]     = useState(false);
+  const [loading, setLoading]   = useState(true);
 
-  const load = async () => { const { data } = await api.get("/bills/my-bills"); setBills(data); };
+  const load = async () => {
+    try { const { data } = await api.get("/bills/my-bills"); setBills(data); }
+    finally { setLoading(false); }
+  };
   useEffect(() => { load(); }, []);
 
   const errors  = validate(payForm);
@@ -68,6 +72,12 @@ const Bills = () => {
     } catch (e) { setError(e.response?.data?.message || "Payment failed"); }
     finally { setPaying(false); }
   };
+
+  if (loading) return (
+    <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+      <CircularProgress sx={{ color: "#1a237e" }} />
+    </Box>
+  );
 
   return (
     <Box>

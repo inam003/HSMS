@@ -39,8 +39,12 @@ const Expenses = () => {
   const [saving, setSaving]         = useState(false);
   const [deleting, setDeleting]     = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [loading, setLoading]           = useState(true);
 
-  const load = async () => { const { data } = await api.get("/expenses"); setExpenses(data); };
+  const load = async () => {
+    try { const { data } = await api.get("/expenses"); setExpenses(data); }
+    finally { setLoading(false); }
+  };
   useEffect(() => { load(); }, []);
 
   const errors  = validate(form);
@@ -79,6 +83,12 @@ const Expenses = () => {
   };
 
   const total = expenses.reduce((s, e) => s + e.Amount, 0);
+
+  if (loading) return (
+    <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+      <CircularProgress sx={{ color: "#1a237e" }} />
+    </Box>
+  );
 
   return (
     <Box>

@@ -52,10 +52,13 @@ const Bills = () => {
   const [generating, setGenerating] = useState(false);
 
   const [success, setSuccess]     = useState("");
+  const [loading, setLoading]     = useState(true);
 
   const load = async () => {
-    const [b, u] = await Promise.all([api.get("/bills"), api.get("/units")]);
-    setBills(b.data); setUnits(u.data.filter((u) => u.Status === "Occupied"));
+    try {
+      const [b, u] = await Promise.all([api.get("/bills"), api.get("/units")]);
+      setBills(b.data); setUnits(u.data.filter((u) => u.Status === "Occupied"));
+    } finally { setLoading(false); }
   };
   useEffect(() => { load(); }, []);
 
@@ -100,6 +103,12 @@ const Bills = () => {
     } catch (e) { setSuccess(""); }
     finally { setGenerating(false); }
   };
+
+  if (loading) return (
+    <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+      <CircularProgress sx={{ color: "#1a237e" }} />
+    </Box>
+  );
 
   return (
     <Box>

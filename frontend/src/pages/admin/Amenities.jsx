@@ -45,10 +45,13 @@ const Amenities = () => {
   const [saving, setSaving]             = useState(false);
   const [deleting, setDeleting]         = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [loading, setLoading]           = useState(true);
 
   const load = async () => {
-    const [a, b] = await Promise.all([api.get("/amenities"), api.get("/amenities/bookings")]);
-    setAmenities(a.data); setBookings(b.data);
+    try {
+      const [a, b] = await Promise.all([api.get("/amenities"), api.get("/amenities/bookings")]);
+      setAmenities(a.data); setBookings(b.data);
+    } finally { setLoading(false); }
   };
   useEffect(() => { load(); }, []);
 
@@ -94,6 +97,12 @@ const Amenities = () => {
   const handleBookingAction = async (id, status) => {
     await api.put(`/amenities/bookings/${id}`, { Status: status }); load();
   };
+
+  if (loading) return (
+    <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+      <CircularProgress sx={{ color: "#1a237e" }} />
+    </Box>
+  );
 
   return (
     <Box>

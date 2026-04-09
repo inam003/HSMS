@@ -35,9 +35,13 @@ const Complaints = () => {
   const [success, setSuccess]       = useState("");
   const [saving, setSaving]         = useState(false);
 
+  const [loading, setLoading]       = useState(true);
+
   const load = async () => {
-    const [c, s] = await Promise.all([api.get("/complaints"), api.get("/staff")]);
-    setComplaints(c.data); setStaff(s.data);
+    try {
+      const [c, s] = await Promise.all([api.get("/complaints"), api.get("/staff")]);
+      setComplaints(c.data); setStaff(s.data);
+    } finally { setLoading(false); }
   };
   useEffect(() => { load(); }, []);
 
@@ -60,6 +64,12 @@ const Complaints = () => {
     } catch { /* ignore */ }
     finally { setSaving(false); }
   };
+
+  if (loading) return (
+    <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+      <CircularProgress sx={{ color: "#1a237e" }} />
+    </Box>
+  );
 
   return (
     <Box>
