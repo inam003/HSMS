@@ -1,7 +1,9 @@
+import { PortalPageTitle } from "../../components/common/PortalUI";
+import Toast from "../../components/common/Toast";
+import AdminDialog, { AdminDialogHeader as ModalHeader } from "../../components/common/AdminDialog";
 import { useEffect, useState } from "react";
 import {
-  Box, Typography, Button, Card, CardContent, CardActions, Grid, Dialog,
-  DialogContent, DialogActions, TextField, Select, MenuItem, FormControl, InputLabel,
+  Box, Typography, Button, Card, CardContent, CardActions, Grid, DialogContent, DialogActions, TextField, Select, MenuItem, FormControl, InputLabel,
   FormHelperText, Alert, Chip, Stepper, Step, StepLabel, Divider, CircularProgress
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
@@ -9,19 +11,7 @@ import ReportProblemIcon from "@mui/icons-material/ReportProblem";
 import FeedbackIcon from "@mui/icons-material/Feedback";
 import api from "../../api/axios";
 
-const ModalHeader = ({ icon, title, subtitle, color = "#1a237e" }) => (
-  <Box sx={{ bgcolor: color, px: 3, py: 2.5, borderRadius: "12px 12px 0 0" }}>
-    <Box display="flex" alignItems="center" gap={1.5}>
-      <Box sx={{ color: "rgba(255,255,255,0.85)", display: "flex" }}>{icon}</Box>
-      <Box>
-        <Typography variant="h6" fontWeight="bold" color="white">{title}</Typography>
-        {subtitle && <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.7)" }}>{subtitle}</Typography>}
-      </Box>
-    </Box>
-  </Box>
-);
 
-const statusColors = { Pending: "warning", "In Progress": "info", Resolved: "success" };
 const steps = ["Pending", "In Progress", "Resolved"];
 const categories = ["Electricity", "Plumbing", "Security", "Cleanliness", "Noise", "Parking", "Other"];
 
@@ -93,32 +83,32 @@ const Complaints = () => {
 
   if (loading) return (
     <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-      <CircularProgress sx={{ color: "#1a237e" }} />
+      <CircularProgress sx={{ color: "#0854ed" }} />
     </Box>
   );
 
   return (
-    <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h5" fontWeight="bold">My Complaints & Requests</Typography>
+    <Box className="hs-portal-page hs-portal-resident-Complaints">
+      <Box className="hs-portal-heading-row" display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+        <PortalPageTitle subtitle="Submit requests and follow their progress through resolution.">My Complaints & Requests</PortalPageTitle>
         <Button variant="contained" startIcon={<AddIcon />}
           onClick={() => { setForm({ Category: "", Description: "" }); setTouched({}); setSubmitError(""); setOpen(true); }}
-          sx={{ bgcolor: "#1a237e", borderRadius: 2 }}>New Complaint</Button>
+          sx={{ bgcolor: "#0854ed", borderRadius: 2 }}>New Complaint</Button>
       </Box>
-      {success && <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSuccess("")}>{success}</Alert>}
+      {success && <Toast severity="success" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSuccess("")}>{success}</Toast>}
 
       <Grid container spacing={2}>
         {complaints.map((c) => {
           const headerColor = c.Status === "Resolved" ? "#2e7d32" : c.Status === "In Progress" ? "#1565c0" : "#e65100";
           return (
-            <Grid item xs={12} md={6} key={c._id}>
+            <Grid size={{ xs: 12, md: 6 }}    key={c._id}>
               <Card sx={{ borderRadius: 2, boxShadow: "0 2px 12px rgba(0,0,0,0.08)", height: "100%", display: "flex", flexDirection: "column" }}>
                 {/* Colored header */}
-                <Box sx={{ bgcolor: headerColor, borderRadius: "8px 8px 0 0", px: 2.5, py: 1.5,
+                <Box className="hs-portal-card-header" sx={{ bgcolor: headerColor, borderRadius: "8px 8px 0 0", px: 2.5, py: 1.5,
                   display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <Chip label={c.Category} size="small"
                     sx={{ bgcolor: "rgba(255,255,255,0.2)", color: "white", fontWeight: "bold", border: "none" }} />
-                  <Chip label={c.Status} size="small"
+                  <Chip color={c.Status === "Resolved" || c.Status === "Completed" ? "success" : c.Status === "In Progress" ? "info" : "warning"} label={c.Status} size="small"
                     sx={{ bgcolor: "rgba(255,255,255,0.25)", color: "white", fontWeight: "bold", border: "none" }} />
                 </Box>
 
@@ -163,17 +153,17 @@ const Complaints = () => {
           );
         })}
         {!complaints.length && (
-          <Grid item xs={12}>
+          <Grid size={{ xs: 12 }}  >
             <Typography color="text.secondary" align="center" sx={{ py: 4 }}>No complaints submitted</Typography>
           </Grid>
         )}
       </Grid>
 
       {/* ── Submit Complaint Dialog ── */}
-      <Dialog open={open} onClose={() => !submitting && setOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+      <AdminDialog open={open} onClose={() => !submitting && setOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
         <ModalHeader icon={<ReportProblemIcon />} title="Submit Complaint / Request" subtitle="Describe your issue and we'll assign it" />
         <DialogContent sx={{ pt: 3, pb: 1, px: 3 }}>
-          {submitError && <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSubmitError("")}>{submitError}</Alert>}
+          {submitError && <Toast severity="error" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSubmitError("")}>{submitError}</Toast>}
           <FormControl fullWidth required error={!!touched.Category && !!errors.Category} sx={{ mb: 1 }}>
             <InputLabel>Category</InputLabel>
             <Select value={form.Category} label="Category"
@@ -189,14 +179,14 @@ const Complaints = () => {
         <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
           <Button onClick={() => setOpen(false)} disabled={submitting} sx={{ color: "#555", borderRadius: 2 }}>Cancel</Button>
           <Button variant="contained" onClick={handleSubmit} disabled={!isValid || submitting}
-            sx={{ bgcolor: "#1a237e", borderRadius: 2, px: 3, minWidth: 110, "&:disabled": { bgcolor: "#c5cae9", color: "#fff" } }}>
+            sx={{ bgcolor: "#0854ed", borderRadius: 2, px: 3, minWidth: 110, "&:disabled": { bgcolor: "#c5cae9", color: "#fff" } }}>
             {submitting ? <CircularProgress size={18} color="inherit" /> : "Submit"}
           </Button>
         </DialogActions>
-      </Dialog>
+      </AdminDialog>
 
       {/* ── Feedback Dialog ── */}
-      <Dialog open={!!feedbackId} onClose={() => !sendingFeedback && setFeedbackId(null)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+      <AdminDialog open={!!feedbackId} onClose={() => !sendingFeedback && setFeedbackId(null)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
         <ModalHeader icon={<FeedbackIcon />} title="Submit Feedback" subtitle="Let us know how the issue was resolved" color="#2e7d32" />
         <DialogContent sx={{ pt: 3, pb: 1, px: 3 }}>
           <TextField fullWidth label="Your feedback on resolution" required multiline rows={3} value={feedback}
@@ -213,7 +203,7 @@ const Complaints = () => {
             {sendingFeedback ? <CircularProgress size={18} color="inherit" /> : "Submit Feedback"}
           </Button>
         </DialogActions>
-      </Dialog>
+      </AdminDialog>
     </Box>
   );
 };

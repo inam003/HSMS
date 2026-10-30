@@ -1,3 +1,5 @@
+import { PortalPageTitle } from "../../components/common/PortalUI";
+import Toast from "../../components/common/Toast";
 import { useEffect, useState } from "react";
 import {
   Box, Typography, Card, CardContent, Grid, Button, Alert,
@@ -8,7 +10,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import AccessTimeIcon  from "@mui/icons-material/AccessTime";
 import api from "../../api/axios";
 
-const typeColors = { General: "#1a237e", Housing: "#2e7d32", Maintenance: "#e65100", Other: "#6a1b9a" };
+const typeColors = { General: "#0854ed", Housing: "#2e7d32", Maintenance: "#e65100", Other: "#6a1b9a" };
 
 const Polls = () => {
   const [polls, setPolls]       = useState([]);
@@ -39,25 +41,25 @@ const Polls = () => {
   };
 
   return (
-    <Box>
-      <Typography variant="h5" fontWeight="bold" mb={2}>Active Polls</Typography>
-      {success && <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSuccess("")}>{success}</Alert>}
-      {error   && <Alert severity="error"   sx={{ mb: 2, borderRadius: 2 }} onClose={() => setError("")}>{error}</Alert>}
+    <Box className="hs-portal-heading-row">
+      <PortalPageTitle subtitle="Take part in community decisions and review poll results.">Active Polls</PortalPageTitle>
+      {success && <Toast severity="success" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSuccess("")}>{success}</Toast>}
+      {error   && <Toast severity="error"   sx={{ mb: 2, borderRadius: 2 }} onClose={() => setError("")}>{error}</Toast>}
 
       <Grid container spacing={2}>
         {polls.map((p) => {
           const d          = details[p._id];
           const totalVotes = d?.options?.reduce((s, o) => s + o.VoteCount, 0) || 0;
-          const pollColor  = typeColors[p.PollType] || "#1a237e";
+          const pollColor  = typeColors[p.PollType] || "#0854ed";
           const maxVotes   = d?.options ? Math.max(...d.options.map((o) => o.VoteCount)) : 0;
 
           return (
-            <Grid item xs={12} md={6} key={p._id}>
+            <Grid size={{ xs: 12, md: 6 }}    key={p._id}>
               <Card sx={{ borderRadius: 2, boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
                 height: "100%", display: "flex", flexDirection: "column" }}>
 
                 {/* ── Colored Header ── */}
-                <Box sx={{ bgcolor: pollColor, borderRadius: "8px 8px 0 0", px: 2.5, py: 1.8 }}>
+                <Box className="hs-portal-card-header" sx={{ bgcolor: pollColor, borderRadius: "8px 8px 0 0", px: 2.5, py: 1.8 }}>
                   <Box display="flex" justifyContent="space-between" alignItems="center">
                     <Typography variant="subtitle1" fontWeight="bold" color="white"
                       noWrap sx={{ flex: 1, mr: 1 }}>{p.Title}</Typography>
@@ -114,7 +116,7 @@ const Polls = () => {
                         <Box key={opt._id}
                           onClick={() => setSelected({ ...selected, [p._id]: opt._id })}
                           sx={{
-                            border: `2px solid ${selected[p._id] === opt._id ? pollColor : "#e8eaf6"}`,
+                            border: `2px solid ${selected[p._id] === opt._id ? pollColor : "#e9f1ff"}`,
                             borderRadius: 2, px: 1.5, py: 1, mb: 1, cursor: "pointer",
                             bgcolor: selected[p._id] === opt._id ? `${pollColor}12` : "transparent",
                             transition: "all 0.15s",
@@ -154,7 +156,7 @@ const Polls = () => {
         })}
 
         {!polls.length && (
-          <Grid item xs={12}>
+          <Grid size={{ xs: 12 }}  >
             <Box sx={{ textAlign: "center", py: 8 }}>
               <HowToVoteIcon sx={{ fontSize: 64, color: "#ddd", mb: 2 }} />
               <Typography variant="h6" color="text.secondary" mb={0.5}>No Active Polls</Typography>

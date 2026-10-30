@@ -1,28 +1,27 @@
+import AdminDialog, { AdminDialogHeader as ModalHeader, AdminDeleteDialog } from "../../components/common/AdminDialog";
+import Toast from "../../components/common/Toast";
 import { useEffect, useState } from "react";
 import {
-  Box, Typography, Button, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Paper, IconButton, Dialog, DialogContent,
-  DialogActions, TextField, Alert, Chip, Tooltip, Rating, Divider, Avatar, CircularProgress
+  Box, Typography, Button, DialogContent,
+  DialogActions, TextField, Rating, Divider, CircularProgress
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
+import EditOutlined from "@mui/icons-material/EditOutlined";
+import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
 import KeyIcon from "@mui/icons-material/Key";
 import BadgeIcon from "@mui/icons-material/Badge";
-import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import api from "../../api/axios";
+import SearchRounded from "@mui/icons-material/SearchRounded";
+import FilterAltOutlined from "@mui/icons-material/FilterAltOutlined";
+import KeyboardArrowDownRounded from "@mui/icons-material/KeyboardArrowDownRounded";
+import ChevronLeftRounded from "@mui/icons-material/ChevronLeftRounded";
+import ChevronRightRounded from "@mui/icons-material/ChevronRightRounded";
+import "./Members.css";
+import "./Staff.css";
 
-const ModalHeader = ({ icon, title, subtitle, color = "#1a237e" }) => (
-  <Box sx={{ bgcolor: color, px: 3, py: 2.5, borderRadius: "12px 12px 0 0" }}>
-    <Box display="flex" alignItems="center" gap={1.5}>
-      <Box sx={{ color: "rgba(255,255,255,0.85)", display: "flex" }}>{icon}</Box>
-      <Box>
-        <Typography variant="h6" fontWeight="bold" color="white">{title}</Typography>
-        {subtitle && <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.7)" }}>{subtitle}</Typography>}
-      </Box>
-    </Box>
-  </Box>
-);
+const initials = name => (name || "?").trim().split(/\s+/).slice(0,2).map(part => part.charAt(0)).join("").toUpperCase();
+const ratingValue = value => Math.min(5, Math.max(0, Number(value) || 0));
+
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -37,6 +36,19 @@ const validate = (form, editId) => ({
 
 const Staff = () => {
   const [staff, setStaff]               = useState([]);
+  const [search, setSearch] = useState("");
+  const [type, setType] = useState("");
+  const [page, setPage] = useState(1);
+  const [loadError, setLoadError] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const pageSize = 10;
+  const types = [...new Set(staff.map(s => s.Type).filter(Boolean))].sort((a,b) => a.localeCompare(b));
+  const filtered = staff.filter(s => {
+    const query = search.trim().toLowerCase();
+    return ((s.Name || "").toLowerCase().includes(query) || (s.Email || "").toLowerCase().includes(query)) && (!type || s.Type === type);
+  });
+  const currentPage = Math.min(page, Math.max(1, Math.ceil(filtered.length / pageSize)));
+  const visibleStaff = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
   const [open, setOpen]                 = useState(false);
   const [editId, setEditId]             = useState(null);
   const [form, setForm]                 = useState({ Name: "", Email: "", Password: "", Type: "", Aadhar_CNIC_No: "", Rating: 0 });
@@ -49,7 +61,8 @@ const Staff = () => {
   const [loading, setLoading]           = useState(true);
 
   const load = async () => {
-    try { const { data } = await api.get("/staff"); setStaff(data); }
+    try { setLoadError(""); const { data } = await api.get("/staff"); setStaff(data); }
+    catch (e) {setLoadError(e.response?.data?.message || "Unable to load staff and vendors. Please try again.");}
     finally { setLoading(false); }
   };
   useEffect(() => { load(); }, []);
@@ -94,77 +107,40 @@ const Staff = () => {
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
-    setDeleting(true);
+    setDeleting(true); setDeleteError("");
     try {
       await api.delete(`/staff/${deleteTarget.id}`);
-      setSuccess(`${deleteTarget.name} has been removed.`); load();
-    } catch { /* ignore */ }
-    finally { setDeleting(false); setDeleteTarget(null); }
+      setSuccess(`${deleteTarget.name} has been removed.`); setDeleteTarget(null); load();
+    } catch (e) {setDeleteError(e.response?.data?.message || "Unable to delete this record. Please try again.");}
+    finally { setDeleting(false); }
   };
 
-  if (loading) return (
-    <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-      <CircularProgress sx={{ color: "#1a237e" }} />
-    </Box>
-  );
-
   return (
-    <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h5" fontWeight="bold">Staff & Vendor Management</Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={openAdd} sx={{ bgcolor: "#1a237e", borderRadius: 2 }}>
-          Add Staff/Vendor
-        </Button>
-      </Box>
-      {success && <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSuccess("")}>{success}</Alert>}
-
-      <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
-        <Table>
-          <TableHead sx={{ bgcolor: "#1a237e" }}>
-            <TableRow>
-              {["Name", "Type", "Email", "CNIC", "Entry Code", "Rating", "Actions"].map((h) => (
-                <TableCell key={h} sx={{ color: "white", fontWeight: "bold" }}>{h}</TableCell>
-              ))}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {staff.map((s) => (
-              <TableRow key={s._id} hover>
-                <TableCell>{s.Name}</TableCell>
-                <TableCell><Chip label={s.Type} size="small" color="primary" /></TableCell>
-                <TableCell>{s.Email}</TableCell>
-                <TableCell>{s.Aadhar_CNIC_No || "—"}</TableCell>
-                <TableCell>
-                  <Chip icon={<KeyIcon />} label={s.Entry_Code} color="success" size="small" sx={{ fontFamily: "monospace", fontWeight: "bold" }} />
-                </TableCell>
-                <TableCell><Rating value={s.Rating} readOnly size="small" /></TableCell>
-                <TableCell>
-                  <Tooltip title="Edit"><IconButton size="small" color="primary" onClick={() => openEdit(s)}><EditIcon /></IconButton></Tooltip>
-                  <Tooltip title="Delete"><IconButton size="small" color="error" onClick={() => setDeleteTarget({ id: s._id, name: s.Name })}><DeleteIcon /></IconButton></Tooltip>
-                </TableCell>
-              </TableRow>
-            ))}
-            {!staff.length && <TableRow><TableCell colSpan={7} align="center" sx={{ py: 4, color: "#aaa" }}>No staff/vendors found</TableCell></TableRow>}
-          </TableBody>
-        </Table>
-      </TableContainer>
+    <div className="hs-staff">
+      <div className="hs-page-heading hs-members-heading hs-staff-heading"><div><h1>Staff &amp; Vendor Management</h1><p>Manage staff, vendors, and access details.</p></div><button className="hs-resident-add" onClick={openAdd}><AddIcon/>Add staff/vendor</button></div>
+      {success && <Toast severity="success" sx={{mb:2}} onClose={() => setSuccess("")}>{success}</Toast>}
+      {loadError && <Toast severity="error" sx={{mb:2}} action={<Button color="inherit" onClick={() => {setLoading(true);load();}}>Retry</Button>}>{loadError}</Toast>}
+      <section className="hs-panel hs-residents-panel hs-staff-panel" aria-label="Staff and vendor directory" aria-busy={loading}>
+        <div className="hs-residents-toolbar"><h2>All staff &amp; vendors <span className="hs-residents-count">{staff.length}</span></h2><div className="hs-residents-filters"><label className="hs-resident-search"><SearchRounded/><input type="search" aria-label="Search staff and vendors by name or email" placeholder="Search by name or email..." value={search} onChange={e => {setSearch(e.target.value);setPage(1);}}/></label><div className="hs-resident-filter"><FilterAltOutlined/><select aria-label="Filter staff and vendors by type" value={type} onChange={e => {setType(e.target.value);setPage(1);}}><option value="">All types</option>{types.map(t => <option key={t} value={t}>{t}</option>)}</select><KeyboardArrowDownRounded/></div></div></div>
+        <div className="hs-residents-table-wrap"><table className="hs-residents-table hs-staff-table"><thead><tr>{["Name","Type","Email","CNIC","Entry code","Rating","Actions"].map(h => <th key={h} scope="col">{h}</th>)}</tr></thead><tbody>{loading ? <tr><td colSpan={7}><div className="hs-residents-loading" role="status"><CircularProgress size={26}/>Loading staff and vendors...</div></td></tr> : visibleStaff.map(s => <tr key={s._id}><td><div className="hs-resident-person"><span className="hs-resident-avatar">{initials(s.Name)}</span><strong>{s.Name}</strong></div></td><td><span className="hs-staff-type">{s.Type}</span></td><td>{s.Email || "—"}</td><td>{s.Aadhar_CNIC_No || "—"}</td><td>{s.Entry_Code ? <span className="hs-staff-code"><KeyIcon/>{s.Entry_Code}</span> : "—"}</td><td><div className="hs-staff-rating"><Rating value={ratingValue(s.Rating)} precision={0.1} readOnly size="small"/><span>{ratingValue(s.Rating).toFixed(1)}</span></div></td><td><div className="hs-resident-actions"><button className="hs-resident-edit" title="Edit staff/vendor" aria-label={`Edit ${s.Name}`} onClick={() => openEdit(s)}><EditOutlined/></button><button className="hs-resident-delete" title="Delete staff/vendor" aria-label={`Delete ${s.Name}`} onClick={() => {setDeleteError("");setDeleteTarget({id:s._id,name:s.Name});}}><DeleteOutlineRounded/></button></div></td></tr>)}{!loading && !visibleStaff.length && <tr><td colSpan={7} className="hs-empty">{loadError ? "Staff and vendor data unavailable" : staff.length ? "No records match your search or filter." : "No staff or vendors yet. Add a record to get started."}</td></tr>}</tbody></table></div>
+        <div className="hs-residents-pagination"><span aria-live="polite">Showing {filtered.length ? (currentPage - 1) * pageSize + 1 : 0}–{Math.min(currentPage * pageSize,filtered.length)} of {filtered.length} records</span><div><button disabled={loading || currentPage <= 1} onClick={() => setPage(currentPage - 1)}><ChevronLeftRounded/>Previous</button><button disabled={loading || currentPage * pageSize >= filtered.length} onClick={() => setPage(currentPage + 1)}>Next<ChevronRightRounded/></button></div></div>
+      </section>
 
       {/* ── Add / Edit Dialog ── */}
-      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+      <AdminDialog busy={saving} open={open} onClose={() => {if (!saving) setOpen(false);}} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
         <ModalHeader icon={<BadgeIcon />} title={editId ? "Edit Staff/Vendor" : "Add Staff/Vendor"}
           subtitle={editId ? "Update staff member details" : "Enter the staff/vendor information"} />
         <DialogContent sx={{ pt: 3, pb: 1, px: 3 }}>
-          {submitError && <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSubmitError("")}>{submitError}</Alert>}
-          <Box display="flex" gap={2} mb={1}>
+          {submitError && <Toast severity="error" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSubmitError("")}>{submitError}</Toast>}
+          <Box display="flex" flexDirection={{xs:"column",sm:"row"}} gap={2} mb={1}>
             <TextField fullWidth label="Full Name" required value={form.Name}
               onChange={(e) => setForm({ ...form, Name: e.target.value })} {...field("Name")} />
             <TextField fullWidth label="Email Address" type="email" required value={form.Email}
               onChange={(e) => setForm({ ...form, Email: e.target.value })} {...field("Email")} />
           </Box>
-          <TextField fullWidth label={editId ? "New Password (leave blank to keep current)" : "Password"}
-            type="password" required={!editId} value={form.Password}
-            onChange={(e) => setForm({ ...form, Password: e.target.value })} {...field("Password")} />
-          <Box display="flex" gap={2} mb={1}>
+          {!editId && <TextField fullWidth label="Password" type="password" required value={form.Password}
+            onChange={(e) => setForm({ ...form, Password: e.target.value })} {...field("Password")} />}
+          <Box display="flex" flexDirection={{xs:"column",sm:"row"}} gap={2} mb={1}>
             <TextField fullWidth label="Type (e.g. Maid, Driver, Plumber)" required value={form.Type}
               onChange={(e) => setForm({ ...form, Type: e.target.value })} {...field("Type")} />
             <TextField fullWidth label="CNIC Number" value={form.Aadhar_CNIC_No}
@@ -172,7 +148,7 @@ const Staff = () => {
           </Box>
           <Box mb={1}>
             <Typography variant="body2" mb={0.5}>Rating</Typography>
-            <Rating value={form.Rating} onChange={(_, v) => setForm({ ...form, Rating: v })} />
+            <Rating value={form.Rating} onChange={(_, v) => setForm({ ...form, Rating: v ?? 0 })} />
           </Box>
           {!editId && (
             <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
@@ -182,36 +158,19 @@ const Staff = () => {
         </DialogContent>
         <Divider />
         <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
-          <Button onClick={() => setOpen(false)} sx={{ color: "#555", borderRadius: 2 }}>Cancel</Button>
+          <Button disabled={saving} onClick={() => setOpen(false)} sx={{ color: "#555", borderRadius: 2 }}>Cancel</Button>
           <Button variant="contained" onClick={handleSave} disabled={!isValid || saving}
-            sx={{ bgcolor: "#1a237e", borderRadius: 2, px: 3, minWidth: 120, "&:disabled": { bgcolor: "#c5cae9", color: "#fff" } }}>
+            sx={{ bgcolor: "#0854ed", borderRadius: 2, px: 3, minWidth: 120, "&:disabled": { bgcolor: "#c5cae9", color: "#fff" } }}>
             {saving ? <CircularProgress size={18} color="inherit" /> : (editId ? "Save Changes" : "Add Staff")}
           </Button>
         </DialogActions>
-      </Dialog>
+      </AdminDialog>
 
       {/* ── Delete Dialog ── */}
-      <Dialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3, overflow: "hidden" } }}>
-        <Box sx={{ bgcolor: "#c62828", height: 6 }} />
-        <DialogContent sx={{ pt: 4, pb: 2, px: 3, textAlign: "center" }}>
-          <Avatar sx={{ bgcolor: "#ffebee", width: 64, height: 64, mx: "auto", mb: 2 }}>
-            <WarningAmberIcon sx={{ color: "#c62828", fontSize: 36 }} />
-          </Avatar>
-          <Typography variant="h6" fontWeight="bold" mb={1}>Delete Staff/Vendor?</Typography>
-          <Typography variant="body2" color="text.secondary">You are about to permanently delete</Typography>
-          <Typography fontWeight="bold" fontSize={15} mt={0.5} mb={1.5} color="#1a237e">{deleteTarget?.name}</Typography>
-          <Typography variant="body2" color="text.secondary">This action <strong>cannot be undone</strong>.</Typography>
-        </DialogContent>
-        <Divider />
-        <DialogActions sx={{ px: 3, py: 2, gap: 1, justifyContent: "center" }}>
-          <Button fullWidth variant="outlined" onClick={() => setDeleteTarget(null)} sx={{ borderRadius: 2, borderColor: "#ccc", color: "#555", py: 1 }}>Cancel</Button>
-          <Button fullWidth variant="contained" onClick={handleDelete} disabled={deleting}
-            sx={{ borderRadius: 2, bgcolor: "#c62828", py: 1, "&:hover": { bgcolor: "#b71c1c" } }}>
-            {deleting ? <CircularProgress size={18} color="inherit" /> : "Yes, Delete"}
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+      <AdminDeleteDialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={handleDelete} busy={deleting} title="Delete Staff/Vendor?" name={deleteTarget?.name}>
+        {deleteError && <Toast severity="error">{deleteError}</Toast>}
+      </AdminDeleteDialog>
+    </div>
   );
 };
 

@@ -1,8 +1,11 @@
+import { PortalPageTitle, PortalStatCard as StatCard } from "../../components/common/PortalUI";
+import Toast from "../../components/common/Toast";
+import AdminDialog, { AdminDialogHeader as ModalHeader } from "../../components/common/AdminDialog";
 import { useEffect, useState } from "react";
 import {
   Box, Typography, Button, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Paper, Alert, Chip, Card, CardContent,
-  TextField, Dialog, DialogContent, DialogActions, Divider, CircularProgress,
+  TextField, DialogContent, DialogActions, Divider, CircularProgress,
   Grid
 } from "@mui/material";
 import LoginIcon        from "@mui/icons-material/Login";
@@ -15,35 +18,7 @@ import EventNoteIcon    from "@mui/icons-material/EventNote";
 import BadgeIcon        from "@mui/icons-material/Badge";
 import api from "../../api/axios";
 
-const StatCard = ({ label, value, color, bg, icon }) => (
-  <Card sx={{ borderRadius: 2, borderLeft: `5px solid ${color}`,
-    boxShadow: "0 2px 12px rgba(0,0,0,0.08)", height: "100%" }}>
-    <CardContent sx={{ p: 2.5 }}>
-      <Box display="flex" justifyContent="space-between" alignItems="center">
-        <Box>
-          <Typography variant="body2" color="text.secondary" fontWeight="medium" mb={0.5}>{label}</Typography>
-          <Typography variant="h3" fontWeight="bold" color={color} lineHeight={1}>{value}</Typography>
-        </Box>
-        <Box sx={{ bgcolor: bg, borderRadius: "50%", width: 48, height: 48, flexShrink: 0,
-          display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Box sx={{ color, display: "flex", "& svg": { fontSize: 24 } }}>{icon}</Box>
-        </Box>
-      </Box>
-    </CardContent>
-  </Card>
-);
 
-const ModalHeader = ({ icon, title, subtitle, color = "#2e7d32" }) => (
-  <Box sx={{ bgcolor: color, px: 3, py: 2.5, borderRadius: "12px 12px 0 0" }}>
-    <Box display="flex" alignItems="center" gap={1.5}>
-      <Box sx={{ color: "rgba(255,255,255,0.85)", display: "flex" }}>{icon}</Box>
-      <Box>
-        <Typography variant="h6" fontWeight="bold" color="white">{title}</Typography>
-        {subtitle && <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.7)" }}>{subtitle}</Typography>}
-      </Box>
-    </Box>
-  </Box>
-);
 
 const StaffAttendance = () => {
   const [attendance, setAttendance]   = useState([]);
@@ -117,23 +92,23 @@ const StaffAttendance = () => {
 
   if (loading) return (
     <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-      <CircularProgress sx={{ color: "#1a237e" }} />
+      <CircularProgress sx={{ color: "#0854ed" }} />
     </Box>
   );
 
   return (
-    <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h5" fontWeight="bold">Attendance Management</Typography>
+    <Box className="hs-portal-page hs-portal-staff-Attendance">
+      <Box className="hs-portal-heading-row" display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+        <PortalPageTitle subtitle="Record your shift, update availability, and review attendance.">Attendance Management</PortalPageTitle>
         <Button variant="outlined" startIcon={<EditIcon />}
           onClick={() => { setAvailStatus(""); setAvailTouched(false); setStatusOpen(true); }}
-          sx={{ borderColor: "#4527a0", color: "#4527a0", borderRadius: 2 }}>
+          sx={{ borderColor: "#0854ed", color: "#0854ed", borderRadius: 2 }}>
           Update Availability
         </Button>
       </Box>
 
-      {success && <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSuccess("")}>{success}</Alert>}
-      {error   && <Alert severity="error"   sx={{ mb: 2, borderRadius: 2 }} onClose={() => setError("")}>{error}</Alert>}
+      {success && <Toast severity="success" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSuccess("")}>{success}</Toast>}
+      {error   && <Toast severity="error"   sx={{ mb: 2, borderRadius: 2 }} onClose={() => setError("")}>{error}</Toast>}
 
       {/* Action Buttons */}
       <Card sx={{ mb: 3, borderRadius: 2 }}>
@@ -162,23 +137,23 @@ const StaffAttendance = () => {
 
       {/* Summary Stats */}
       <Grid container spacing={2} mb={3}>
-        <Grid item xs={6} sm={3}>
+        <Grid size={{ xs: 6, sm: 3 }}   >
           <StatCard label="Days Present"  value={presentCount}      color="#2e7d32" bg="#e8f5e9" icon={<CheckCircleIcon />} />
         </Grid>
-        <Grid item xs={6} sm={3}>
+        <Grid size={{ xs: 6, sm: 3 }}   >
           <StatCard label="Half Days"     value={halfDayCount}      color="#f57f17" bg="#fff8e1" icon={<AccessTimeIcon />} />
         </Grid>
-        <Grid item xs={6} sm={3}>
+        <Grid size={{ xs: 6, sm: 3 }}   >
           <StatCard label="Absent"        value={absentCount}       color="#c62828" bg="#ffebee" icon={<EventNoteIcon />} />
         </Grid>
-        <Grid item xs={6} sm={3}>
+        <Grid size={{ xs: 6, sm: 3 }}   >
           <StatCard label="Total Records" value={attendance.length} color="#1565c0" bg="#e3f2fd" icon={<BadgeIcon />} />
         </Grid>
       </Grid>
 
       {/* Attendance History */}
       <Card sx={{ borderRadius: 2, boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
-        <Box sx={{ bgcolor: "#4527a0", px: 2.5, py: 1.8, borderRadius: "8px 8px 0 0",
+        <Box className="hs-portal-card-header" sx={{ bgcolor: "#0854ed", px: 2.5, py: 1.8, borderRadius: "8px 8px 0 0",
           display: "flex", alignItems: "center", gap: 1 }}>
           <Box sx={{ bgcolor: "rgba(255,255,255,0.15)", borderRadius: 1.5, p: 0.7, display: "flex" }}>
             <EventNoteIcon sx={{ color: "white", fontSize: 18 }} />
@@ -216,7 +191,7 @@ const StaffAttendance = () => {
       </Card>
 
       {/* ── Check-In / Check-Out Notes Dialog ── */}
-      <Dialog open={noteOpen} onClose={() => !submitting && setNoteOpen(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+      <AdminDialog open={noteOpen} onClose={() => !submitting && setNoteOpen(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
         <ModalHeader
           icon={isCheckin ? <LoginIcon /> : <LogoutIcon />}
           title={isCheckin ? "Confirm Check-In" : "Confirm Check-Out"}
@@ -236,18 +211,18 @@ const StaffAttendance = () => {
             {submitting ? <CircularProgress size={18} color="inherit" /> : `Confirm ${isCheckin ? "Check-In" : "Check-Out"}`}
           </Button>
         </DialogActions>
-      </Dialog>
+      </AdminDialog>
 
       {/* ── Update Availability Dialog ── */}
-      <Dialog open={statusOpen} onClose={() => setStatusOpen(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
-        <ModalHeader icon={<UpdateIcon />} title="Update Availability Status" subtitle="Select your current availability" color="#4527a0" />
+      <AdminDialog open={statusOpen} onClose={() => setStatusOpen(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+        <ModalHeader icon={<UpdateIcon />} title="Update Availability Status" subtitle="Select your current availability" color="#0854ed" />
         <DialogContent sx={{ pt: 3, pb: 1, px: 3 }}>
           <Box display="flex" flexDirection="column" gap={1.5}>
             {["Available", "On Duty", "Off Duty"].map((s) => (
               <Button key={s} variant={availStatus === s ? "contained" : "outlined"} onClick={() => setAvailStatus(s)}
                 sx={{
                   justifyContent: "flex-start", borderRadius: 2, py: 1.2,
-                  ...(availStatus === s ? { bgcolor: "#4527a0" } : { borderColor: "#ccc", color: "#555" }),
+                  ...(availStatus === s ? { bgcolor: "#0854ed" } : { borderColor: "#ccc", color: "#555" }),
                 }}>
                 {s}
               </Button>
@@ -259,11 +234,11 @@ const StaffAttendance = () => {
         <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
           <Button onClick={() => setStatusOpen(false)} sx={{ color: "#555", borderRadius: 2 }}>Cancel</Button>
           <Button variant="contained" onClick={handleUpdateStatus} disabled={!availStatus || updating}
-            sx={{ bgcolor: "#4527a0", borderRadius: 2, px: 3, minWidth: 110, "&:disabled": { bgcolor: "#d1c4e9", color: "#fff" } }}>
+            sx={{ bgcolor: "#0854ed", borderRadius: 2, px: 3, minWidth: 110, "&:disabled": { bgcolor: "#d1c4e9", color: "#fff" } }}>
             {updating ? <CircularProgress size={18} color="inherit" /> : "Update"}
           </Button>
         </DialogActions>
-      </Dialog>
+      </AdminDialog>
     </Box>
   );
 };

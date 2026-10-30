@@ -1,3 +1,4 @@
+import { PortalPageTitle, PortalStatCard as StatCard, PortalSectionTitle as SectionTitle } from "../../components/common/PortalUI";
 import { useEffect, useState } from "react";
 import {
   Grid, Card, CardContent, Typography, Box, Chip, CircularProgress,
@@ -10,32 +11,7 @@ import CheckCircleIcon    from "@mui/icons-material/CheckCircle";
 import { useAuth } from "../../context/AuthContext";
 import api from "../../api/axios";
 
-const StatCard = ({ label, value, color, bg, icon }) => (
-  <Card sx={{ borderRadius: 2, borderLeft: `5px solid ${color}`, boxShadow: "0 2px 12px rgba(0,0,0,0.08)", height: "100%" }}>
-    <CardContent sx={{ p: 3 }}>
-      <Box display="flex" justifyContent="space-between" alignItems="center">
-        <Box>
-          <Typography variant="body2" color="text.secondary" fontWeight="medium" mb={1}>{label}</Typography>
-          <Typography variant="h3" fontWeight="bold" color={color} lineHeight={1}>{value}</Typography>
-        </Box>
-        <Box sx={{ bgcolor: bg, borderRadius: "50%", width: 56, height: 56, flexShrink: 0,
-          display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Box sx={{ color, display: "flex", "& svg": { fontSize: 28 } }}>{icon}</Box>
-        </Box>
-      </Box>
-    </CardContent>
-  </Card>
-);
 
-const SectionTitle = ({ icon, title, color }) => (
-  <Box display="flex" alignItems="center" gap={1} mb={2}>
-    <Box sx={{ bgcolor: color, borderRadius: 1.5, p: 0.8,
-      display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <Box sx={{ color: "white", display: "flex", "& svg": { fontSize: 18 } }}>{icon}</Box>
-    </Box>
-    <Typography variant="h6" fontWeight="bold">{title}</Typography>
-  </Box>
-);
 
 const ResidentDashboard = () => {
   const { user } = useAuth();
@@ -61,13 +37,13 @@ const ResidentDashboard = () => {
 
   if (loading) return (
     <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-      <CircularProgress sx={{ color: "#1a237e" }} />
+      <CircularProgress sx={{ color: "#0854ed" }} />
     </Box>
   );
 
   return (
-    <Box>
-      <Typography variant="h5" fontWeight="bold" mb={0.5}>Welcome, {user?.Name}!</Typography>
+    <Box className="hs-portal-page hs-portal-resident-Dashboard">
+      <PortalPageTitle subtitle="Your home, payments, and community updates at a glance.">Welcome, {user?.Name}!</PortalPageTitle>
       <Typography variant="body2" color="text.secondary" mb={2}>
         Resident Portal — Housing Society Management System
       </Typography>
@@ -82,23 +58,23 @@ const ResidentDashboard = () => {
 
       {/* ── Stat Cards ── */}
       <Grid container spacing={2} mb={3}>
-        <Grid item xs={6} sm={3}>
+        <Grid size={{ xs: 6, sm: 3 }}   >
           <StatCard label="Unpaid Bills"    value={unpaid}        color="#c62828" bg="#ffebee" icon={<ReceiptIcon />} />
         </Grid>
-        <Grid item xs={6} sm={3}>
+        <Grid size={{ xs: 6, sm: 3 }}   >
           <StatCard label="Paid Bills"      value={paid}          color="#2e7d32" bg="#e8f5e9" icon={<CheckCircleIcon />} />
         </Grid>
-        <Grid item xs={6} sm={3}>
+        <Grid size={{ xs: 6, sm: 3 }}   >
           <StatCard label="Complaints"      value={pendingC}      color="#e65100" bg="#fff3e0" icon={<ReportProblemIcon />} />
         </Grid>
-        <Grid item xs={6} sm={3}>
-          <StatCard label="Active Notices"  value={activeNotices} color="#1a237e" bg="#e8eaf6" icon={<CampaignIcon />} />
+        <Grid size={{ xs: 6, sm: 3 }}   >
+          <StatCard label="Active Notices"  value={activeNotices} color="#0854ed" bg="#e9f1ff" icon={<CampaignIcon />} />
         </Grid>
       </Grid>
 
       <Grid container spacing={3}>
         {/* ── Recent Bills ── */}
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}   >
           <Card sx={{ borderRadius: 2, boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
             <CardContent>
               <SectionTitle icon={<ReceiptIcon />} title="Recent Bills" color="#c62828" />
@@ -137,7 +113,7 @@ const ResidentDashboard = () => {
         </Grid>
 
         {/* ── Recent Complaints ── */}
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}   >
           <Card sx={{ borderRadius: 2, boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
             <CardContent>
               <SectionTitle icon={<ReportProblemIcon />} title="Recent Complaints" color="#e65100" />
@@ -145,7 +121,7 @@ const ResidentDashboard = () => {
                 <Box key={c._id} sx={{ py: 1.5, borderBottom: i < recentComplaints.length - 1 ? "1px solid #f5f5f5" : "none" }}>
                   <Box display="flex" justifyContent="space-between" alignItems="center">
                     <Chip label={c.Category} size="small"
-                      sx={{ bgcolor: "#e8eaf6", color: "#1a237e", fontWeight: "bold", fontSize: 11 }} />
+                      sx={{ bgcolor: "#e9f1ff", color: "#0854ed", fontWeight: "bold", fontSize: 11 }} />
                     <Chip label={c.Status}
                       color={c.Status === "Resolved" ? "success" : c.Status === "In Progress" ? "info" : "warning"}
                       size="small" />
@@ -168,13 +144,13 @@ const ResidentDashboard = () => {
 
         {/* ── Latest Notices ── */}
         {latestNotices.length > 0 && (
-          <Grid item xs={12}>
+          <Grid size={{ xs: 12 }}  >
             <Card sx={{ borderRadius: 2, boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
               <CardContent>
-                <SectionTitle icon={<CampaignIcon />} title="Latest Notices" color="#1a237e" />
+                <SectionTitle icon={<CampaignIcon />} title="Latest Notices" color="#0854ed" />
                 <Grid container spacing={2}>
                   {latestNotices.map((n) => (
-                    <Grid item xs={12} sm={4} key={n._id}>
+                    <Grid size={{ xs: 12, sm: 4 }}    key={n._id}>
                       <Box sx={{ p: 2, borderRadius: 2, border: "1px solid #e8eaf6", borderLeft: "4px solid #1a237e" }}>
                         <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={0.5}>
                           <Typography variant="body2" fontWeight="bold" sx={{ flex: 1, mr: 1 }}>{n.Title}</Typography>

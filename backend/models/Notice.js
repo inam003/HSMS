@@ -11,6 +11,7 @@ const noticeSchema = new mongoose.Schema({
   publishedBy: { type: mongoose.Schema.Types.ObjectId, ref: "Admin" },
   PublishDate: { type: Date, default: Date.now },
   ExpiryDate: { type: Date },
+  ExpiredAt: { type: Date, default: null },
   Priority: { type: String, enum: ["Low", "Medium", "High"], default: "Medium" },
   IsActive: { type: Boolean, default: false },
 }, { timestamps: true });

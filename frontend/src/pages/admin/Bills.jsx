@@ -1,27 +1,31 @@
+import AdminDialog, { AdminDialogHeader as ModalHeader } from "../../components/common/AdminDialog";
+import Toast from "../../components/common/Toast";
 import { useEffect, useState } from "react";
 import {
-  Box, Typography, Button, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Paper, Dialog, DialogContent, DialogActions,
+  Box, Typography, Button, DialogContent, DialogActions,
   TextField, Select, MenuItem, FormControl, InputLabel, FormHelperText,
-  Alert, Chip, Divider, CircularProgress
+  Divider, CircularProgress
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import AutorenewIcon from "@mui/icons-material/Autorenew";
 import ReceiptIcon from "@mui/icons-material/Receipt";
 import GroupsIcon from "@mui/icons-material/Groups";
+import SearchRounded from "@mui/icons-material/SearchRounded";
+import FilterAltOutlined from "@mui/icons-material/FilterAltOutlined";
+import CalendarTodayOutlined from "@mui/icons-material/CalendarTodayOutlined";
+import KeyboardArrowDownRounded from "@mui/icons-material/KeyboardArrowDownRounded";
+import ChevronLeftRounded from "@mui/icons-material/ChevronLeftRounded";
+import ChevronRightRounded from "@mui/icons-material/ChevronRightRounded";
 import api from "../../api/axios";
+import "./Members.css";
+import "./Bills.css";
 
-const ModalHeader = ({ icon, title, subtitle, color = "#1a237e" }) => (
-  <Box sx={{ bgcolor: color, px: 3, py: 2.5, borderRadius: "12px 12px 0 0" }}>
-    <Box display="flex" alignItems="center" gap={1.5}>
-      <Box sx={{ color: "rgba(255,255,255,0.85)", display: "flex" }}>{icon}</Box>
-      <Box>
-        <Typography variant="h6" fontWeight="bold" color="white">{title}</Typography>
-        {subtitle && <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.7)" }}>{subtitle}</Typography>}
-      </Box>
-    </Box>
-  </Box>
-);
+const money = value => `PKR ${Number(value || 0).toLocaleString("en-PK", { maximumFractionDigits: 2 })}`;
+const dateLabel = value => {
+  const date = new Date(value);
+  return value && !Number.isNaN(date.getTime()) ? date.toLocaleDateString("en-GB", { timeZone: "UTC" }) : "—";
+};
+
 
 const validateSingle = (form) => ({
   unit:     !form.unit                          ? "Please select a unit"            : "",
@@ -39,6 +43,26 @@ const validateGen = (form) => ({
 const Bills = () => {
   const [bills, setBills]         = useState([]);
   const [units, setUnits]         = useState([]);
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("");
+  const [billType, setBillType] = useState("");
+  const [dueOrder, setDueOrder] = useState("");
+  const [page, setPage] = useState(1);
+  const [loadError, setLoadError] = useState("");
+  const [genError, setGenError] = useState("");
+  const pageSize = 10;
+  const paid = bills.filter(bill => bill.Status === "Paid");
+  const unpaid = bills.filter(bill => bill.Status === "Unpaid");
+  const totalAmount = records => records.reduce((sum, bill) => sum + (Number(bill.Amount) || 0), 0);
+  const query = search.trim().toLowerCase();
+  const filtered = bills.filter(bill =>
+    (!status || bill.Status === status) && (!billType || bill.Bill_Type === billType) &&
+    (String(bill.unit?.Unit_Number ?? "").toLowerCase().includes(query) ||
+      (bill.unit?.resident?.Name || "").toLowerCase().includes(query))
+  );
+  if (dueOrder) filtered.sort((a, b) => (new Date(a.Due_Date) - new Date(b.Due_Date)) * (dueOrder === "earliest" ? 1 : -1));
+  const currentPage = Math.min(page, Math.max(1, Math.ceil(filtered.length / pageSize)));
+  const visibleBills = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
   // Single bill
   const [open, setOpen]           = useState(false);
   const [form, setForm]           = useState({ unit: "", Amount: "", Due_Date: "", Bill_Type: "Maintenance" });
@@ -56,9 +80,11 @@ const Bills = () => {
 
   const load = async () => {
     try {
+      setLoadError("");
       const [b, u] = await Promise.all([api.get("/bills"), api.get("/units")]);
       setBills(b.data); setUnits(u.data.filter((u) => u.Status === "Occupied"));
-    } finally { setLoading(false); }
+    } catch (e) { setLoadError(e.response?.data?.message || "Unable to load bills. Please try again."); }
+    finally { setLoading(false); }
   };
   useEffect(() => { load(); }, []);
 
@@ -96,65 +122,58 @@ const Bills = () => {
   const handleGenerate = async () => {
     setGenTouched({ Amount: true, Due_Date: true });
     if (!genIsValid) return;
-    setGenerating(true);
+    setGenerating(true); setGenError("");
     try {
       const { data } = await api.post("/bills/generate", genForm);
       setSuccess(data.message); setGenOpen(false); load();
-    } catch (e) { setSuccess(""); }
+    } catch (e) { setGenError(e.response?.data?.message || "Unable to generate bills. Please try again."); }
     finally { setGenerating(false); }
   };
 
-  if (loading) return (
-    <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-      <CircularProgress sx={{ color: "#1a237e" }} />
-    </Box>
-  );
-
   return (
-    <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h5" fontWeight="bold">Bills Management</Typography>
-        <Box display="flex" gap={1}>
-          <Button variant="outlined" startIcon={<AutorenewIcon />}
-            onClick={() => { setGenForm({ Amount: "", Due_Date: "", Bill_Type: "Maintenance" }); setGenTouched({}); setGenOpen(true); }}
-            sx={{ borderRadius: 2 }}>Generate All Bills</Button>
-          <Button variant="contained" startIcon={<AddIcon />}
-            onClick={() => { setForm({ unit: "", Amount: "", Due_Date: "", Bill_Type: "Maintenance" }); setTouched({}); setSubmitError(""); setOpen(true); }}
-            sx={{ bgcolor: "#1a237e", borderRadius: 2 }}>Add Single Bill</Button>
-        </Box>
-      </Box>
-      {success && <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSuccess("")}>{success}</Alert>}
-
-      <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
-        <Table>
-          <TableHead sx={{ bgcolor: "#1a237e" }}>
-            <TableRow>
-              {["Unit No.", "Resident", "Amount", "Type", "Due Date", "Status"].map((h) => (
-                <TableCell key={h} sx={{ color: "white", fontWeight: "bold" }}>{h}</TableCell>
-              ))}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {bills.map((b) => (
-              <TableRow key={b._id} hover>
-                <TableCell>{b.unit?.Unit_Number}</TableCell>
-                <TableCell>{b.unit?.resident?.Name || "—"}</TableCell>
-                <TableCell>PKR {b.Amount?.toLocaleString()}</TableCell>
-                <TableCell><Chip label={b.Bill_Type} size="small" /></TableCell>
-                <TableCell>{new Date(b.Due_Date).toLocaleDateString()}</TableCell>
-                <TableCell><Chip label={b.Status} color={b.Status === "Paid" ? "success" : "error"} size="small" /></TableCell>
-              </TableRow>
-            ))}
-            {!bills.length && <TableRow><TableCell colSpan={6} align="center" sx={{ py: 4, color: "#aaa" }}>No bills found</TableCell></TableRow>}
-          </TableBody>
-        </Table>
-      </TableContainer>
+    <div className="hs-bills">
+      <div className="hs-page-heading hs-members-heading hs-bills-heading">
+        <div><h1>Bills Management</h1><p>Create bills and track resident dues.</p></div>
+        <div className="hs-bills-actions">
+          <button className="hs-resident-add hs-bills-generate" onClick={() => { setGenForm({ Amount: "", Due_Date: "", Bill_Type: "Maintenance" }); setGenTouched({}); setGenError(""); setGenOpen(true); }}><AutorenewIcon/>Generate all bills</button>
+          <button className="hs-resident-add" onClick={() => { setForm({ unit: "", Amount: "", Due_Date: "", Bill_Type: "Maintenance" }); setTouched({}); setSubmitError(""); setOpen(true); }}><AddIcon/>Add single bill</button>
+        </div>
+      </div>
+      {success && <Toast severity="success" sx={{ mb: 2 }} onClose={() => setSuccess("")}>{success}</Toast>}
+      {loadError && <Toast severity="error" sx={{ mb: 2 }} action={<Button color="inherit" onClick={() => { setLoading(true); load(); }}>Retry</Button>}>{loadError}</Toast>}
+      <section className="hs-panel hs-bills-summary" aria-label="Billing summary" aria-busy={loading}>
+        {[{ label: "Total billed", records: bills, suffix: "bills" }, { label: "Paid", records: paid, suffix: "bills" }, { label: "Outstanding", records: unpaid, suffix: "unpaid bills" }].map(item => <div key={item.label} className={item.label === "Outstanding" ? "is-outstanding" : ""}><h2>{item.label}</h2><strong>{loading || loadError ? "—" : money(totalAmount(item.records))}</strong><p>{loading || loadError ? "—" : `${item.records.length} ${item.suffix}`}</p></div>)}
+      </section>
+      <section className="hs-panel hs-residents-panel hs-bills-panel" aria-label="Bills" aria-busy={loading}>
+        <div className="hs-bills-toolbar">
+          <div className="hs-bills-tabs" role="group" aria-label="Filter bills by payment status">
+            {[["", "All bills", bills.length], ["Paid", "Paid", paid.length], ["Unpaid", "Unpaid", unpaid.length]].map(([value, label, count]) => <button key={label} aria-pressed={status === value} className={status === value ? "active" : ""} onClick={() => { setStatus(value); setPage(1); }}>{label}<span>{count}</span></button>)}
+          </div>
+          <div className="hs-residents-filters hs-bills-filters">
+            <label className="hs-resident-search"><SearchRounded/><input type="search" aria-label="Search bills by unit or resident" placeholder="Search unit or resident..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}/></label>
+            <div className="hs-bills-selects">
+              <div className="hs-resident-filter"><FilterAltOutlined/><select aria-label="Filter bills by type" value={billType} onChange={e => { setBillType(e.target.value); setPage(1); }}><option value="">All bill types</option><option value="Maintenance">Maintenance</option><option value="Utility">Utility</option></select><KeyboardArrowDownRounded/></div>
+              <div className="hs-resident-filter hs-bills-date"><CalendarTodayOutlined/><select aria-label="Sort bills by due date" value={dueOrder} onChange={e => { setDueOrder(e.target.value); setPage(1); }}><option value="">Due date</option><option value="earliest">Earliest first</option><option value="latest">Latest first</option></select><KeyboardArrowDownRounded/></div>
+            </div>
+          </div>
+        </div>
+        <div className="hs-residents-table-wrap"><table className="hs-residents-table hs-bills-table">
+          <thead><tr>{["Unit no.", "Resident", "Amount (PKR)", "Type", "Due date", "Status"].map(label => <th key={label} scope="col">{label}</th>)}</tr></thead>
+          <tbody>
+            {loading ? <tr><td colSpan={6}><div className="hs-residents-loading" role="status"><CircularProgress size={26}/>Loading bills...</div></td></tr> : visibleBills.map(bill => <tr key={bill._id}>
+              <td><strong>{bill.unit?.Unit_Number ?? "—"}</strong></td><td>{bill.unit?.resident?.Name || "—"}</td><td>{money(bill.Amount)}</td><td><span className="hs-bill-type">{bill.Bill_Type}</span></td><td>{dateLabel(bill.Due_Date)}</td><td><span className={`hs-bill-status ${bill.Status === "Paid" ? "paid" : "unpaid"}`}><i/>{bill.Status}</span></td>
+            </tr>)}
+            {!loading && !visibleBills.length && <tr><td colSpan={6} className="hs-empty">{loadError ? "Bill data unavailable" : bills.length ? "No bills match your search or filters." : "No bills yet. Create a bill to get started."}</td></tr>}
+          </tbody>
+        </table></div>
+        <div className="hs-residents-pagination"><span aria-live="polite">Showing {filtered.length ? (currentPage - 1) * pageSize + 1 : 0}–{Math.min(currentPage * pageSize, filtered.length)} of {filtered.length} bills</span><div><button disabled={loading || currentPage <= 1} onClick={() => setPage(currentPage - 1)}><ChevronLeftRounded/>Previous</button><button disabled={loading || currentPage * pageSize >= filtered.length} onClick={() => setPage(currentPage + 1)}>Next<ChevronRightRounded/></button></div></div>
+      </section>
 
       {/* ── Single Bill Dialog ── */}
-      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+      <AdminDialog busy={saving} open={open} onClose={() => { if (!saving) setOpen(false); }} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
         <ModalHeader icon={<ReceiptIcon />} title="Create Bill" subtitle="Generate a bill for a specific unit" />
         <DialogContent sx={{ pt: 3, pb: 1, px: 3 }}>
-          {submitError && <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSubmitError("")}>{submitError}</Alert>}
+          {submitError && <Toast severity="error" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSubmitError("")}>{submitError}</Toast>}
           <FormControl fullWidth required error={!!touched.unit && !!errors.unit} sx={{ mb: 1 }}>
             <InputLabel>Unit</InputLabel>
             <Select value={form.unit} label="Unit"
@@ -163,7 +182,7 @@ const Bills = () => {
             </Select>
             <FormHelperText>{touched.unit && errors.unit ? errors.unit : " "}</FormHelperText>
           </FormControl>
-          <Box display="flex" gap={2} mb={1}>
+          <Box display="flex" flexDirection={{ xs: "column", sm: "row" }} gap={2} mb={1}>
             <TextField fullWidth label="Amount (PKR)" type="number" required value={form.Amount}
               onChange={(e) => setForm({ ...form, Amount: e.target.value })} {...field("Amount")} />
             <TextField fullWidth label="Due Date" type="date" required InputLabelProps={{ shrink: true }}
@@ -180,19 +199,20 @@ const Bills = () => {
         </DialogContent>
         <Divider />
         <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
-          <Button onClick={() => setOpen(false)} sx={{ color: "#555", borderRadius: 2 }}>Cancel</Button>
+          <Button disabled={saving} onClick={() => setOpen(false)} sx={{ color: "#555", borderRadius: 2 }}>Cancel</Button>
           <Button variant="contained" onClick={handleSave} disabled={!isValid || saving}
-            sx={{ bgcolor: "#1a237e", borderRadius: 2, px: 3, minWidth: 120, "&:disabled": { bgcolor: "#c5cae9", color: "#fff" } }}>
+            sx={{ bgcolor: "#0854ed", borderRadius: 2, px: 3, minWidth: 120, "&:disabled": { bgcolor: "#c5cae9", color: "#fff" } }}>
             {saving ? <CircularProgress size={18} color="inherit" /> : "Create Bill"}
           </Button>
         </DialogActions>
-      </Dialog>
+      </AdminDialog>
 
       {/* ── Generate Bills Dialog ── */}
-      <Dialog open={genOpen} onClose={() => setGenOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
-        <ModalHeader icon={<GroupsIcon />} title="Generate Bills" subtitle="Create bills for all occupied units at once" color="#2e7d32" />
+      <AdminDialog busy={generating} open={genOpen} onClose={() => { if (!generating) setGenOpen(false); }} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+        <ModalHeader icon={<GroupsIcon />} title="Generate Bills" subtitle="Create bills for all occupied units at once" color="#0854ed" />
         <DialogContent sx={{ pt: 3, pb: 1, px: 3 }}>
-          <Box display="flex" gap={2} mb={1}>
+          {genError && <Toast severity="error" sx={{ mb: 2 }} onClose={() => setGenError("")}>{genError}</Toast>}
+          <Box display="flex" flexDirection={{ xs: "column", sm: "row" }} gap={2} mb={1}>
             <TextField fullWidth label="Amount (PKR)" type="number" required value={genForm.Amount}
               onChange={(e) => setGenForm({ ...genForm, Amount: e.target.value })} {...genField("Amount")} />
             <TextField fullWidth label="Due Date" type="date" required InputLabelProps={{ shrink: true }}
@@ -209,14 +229,14 @@ const Bills = () => {
         </DialogContent>
         <Divider />
         <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
-          <Button onClick={() => setGenOpen(false)} sx={{ color: "#555", borderRadius: 2 }}>Cancel</Button>
+          <Button disabled={generating} onClick={() => setGenOpen(false)} sx={{ color: "#555", borderRadius: 2 }}>Cancel</Button>
           <Button variant="contained" onClick={handleGenerate} disabled={!genIsValid || generating}
-            sx={{ bgcolor: "#2e7d32", borderRadius: 2, px: 3, minWidth: 140, "&:disabled": { bgcolor: "#c8e6c9", color: "#fff" } }}>
+            sx={{ bgcolor: "#0854ed", borderRadius: 2, px: 3, minWidth: 140, "&:disabled": { bgcolor: "#c8e6c9", color: "#fff" } }}>
             {generating ? <CircularProgress size={18} color="inherit" /> : "Generate Bills"}
           </Button>
         </DialogActions>
-      </Dialog>
-    </Box>
+      </AdminDialog>
+    </div>
   );
 };
 

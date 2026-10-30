@@ -1,0 +1,24 @@
+.hs-admin-help .MuiBackdrop-root{background:rgba(18,25,36,.67)}
+.hs-admin-help .hs-admin-help-paper{width:686px;max-width:calc(100% - 48px);margin:24px;border:1px solid #e0e5ed;border-radius:8px;box-shadow:0 20px 65px #09132d2b;color:#0b105e;font-family:Arial,"Segoe UI",sans-serif;background:#fff;overflow:hidden}
+.hs-admin-help *{box-sizing:border-box}
+.hs-admin-help-header{position:relative;display:flex;align-items:center;gap:20px;padding:20px 51px 20px 20px;min-height:111px;border-bottom:1px solid #d3dff1;flex-shrink:0}
+.hs-admin-help-icon{display:grid;place-items:center;width:71px;height:71px;border-radius:9px;background:#e1edff;color:#0069ff;flex-shrink:0}
+.hs-admin-help-icon svg{font-size:39px}
+.hs-admin-help-header h2{margin:0 0 5px;font-size:28px;font-weight:700;line-height:1.25;letter-spacing:-.5px;color:#0b105e}
+.hs-admin-help-header p{margin:0;font-size:20px;line-height:1.4;color:#465b94}
+.hs-admin-help button{font-family:inherit;cursor:pointer}
+.hs-admin-help button:focus-visible{outline:2px solid #0064ff;outline-offset:3px}
+.hs-admin-help-close{position:absolute;right:14px;top:19px;display:grid;place-items:center;width:34px;height:34px;background:transparent;border:0;border-radius:5px;color:#0b105e;padding:4px}
+.hs-admin-help-close svg{font-size:26px}
+.hs-admin-help-close:hover{background:#edf3fc}
+.hs-admin-help .hs-admin-help-content{display:flex;flex-direction:column;gap:34px;padding:30px 37px 28px 40px}
+.hs-admin-help-row{display:flex;align-items:flex-start;gap:32px}
+.hs-admin-help-row>svg{flex-shrink:0;font-size:39px;color:#0b105e;margin-top:8px}
+.hs-admin-help-row>div{min-width:0}
+.hs-admin-help-row h3{margin:0 0 4px;font-size:20px;line-height:1.4;letter-spacing:-.4px;font-weight:600;color:#0b105e}
+.hs-admin-help-row p{margin:0;font-size:18px;line-height:1.5;color:#43547c;overflow-wrap:anywhere}
+.hs-admin-help-footer{display:flex;justify-content:flex-end;align-items:center;padding:15px 18px;min-height:82px;border-top:1px solid #d3dff1;flex-shrink:0}
+.hs-admin-help-footer button{background:#0064ff;color:white;border:1px solid #0064ff;border-radius:6px;padding:11px 25px;min-height:49px;font-size:18px;line-height:1.4;font-weight:500}
+.hs-admin-help-footer button:hover{background:#0054db;border-color:#0054db}
+@media(max-width:600px){.hs-admin-help .hs-admin-help-paper{max-width:calc(100% - 32px);margin:16px}.hs-admin-help-header{padding:20px 44px 20px 18px;gap:15px;min-height:100px}.hs-admin-help-icon{width:51px;height:54px}.hs-admin-help-icon svg{font-size:31px}.hs-admin-help-header h2{font-size:22px}.hs-admin-help-header p{font-size:16px}.hs-admin-help-close{right:8px;top:12px}.hs-admin-help .hs-admin-help-content{padding:24px;gap:25px}.hs-admin-help-row{gap:20px}.hs-admin-help-row>svg{font-size:31px;margin-top:4px}.hs-admin-help-row h3{font-size:18px}.hs-admin-help-row p{font-size:16px}.hs-admin-help-footer{min-height:73px;padding:12px 18px}.hs-admin-help-footer button{font-size:16px;min-height:45px}}
+@media(max-width:380px){.hs-admin-help-header{gap:12px}.hs-admin-help-icon{width:42px;height:46px}.hs-admin-help-header h2{font-size:20px}.hs-admin-help-header p{font-size:14px}.hs-admin-help .hs-admin-help-content{padding-inline:18px}.hs-admin-help-row{gap:15px}.hs-admin-help-row h3{font-size:17px}.hs-admin-help-row p{font-size:15px}}

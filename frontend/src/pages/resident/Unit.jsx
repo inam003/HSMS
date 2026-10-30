@@ -1,7 +1,10 @@
+import { PortalPageTitle } from "../../components/common/PortalUI";
+import Toast from "../../components/common/Toast";
+import AdminDialog, { AdminDialogHeader as ModalHeader } from "../../components/common/AdminDialog";
 import { useEffect, useState } from "react";
 import {
   Box, Typography, Card, CardContent, Grid, Chip, CircularProgress, Alert,
-  Divider, Button, Dialog, DialogContent, DialogActions, TextField,
+  Divider, Button, DialogContent, DialogActions, TextField,
   Select, MenuItem, FormControl, InputLabel
 } from "@mui/material";
 import AddIcon          from "@mui/icons-material/Add";
@@ -9,17 +12,6 @@ import HomeIcon         from "@mui/icons-material/Home";
 import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
 import api from "../../api/axios";
 
-const ModalHeader = ({ icon, title, subtitle, color = "#1a237e" }) => (
-  <Box sx={{ bgcolor: color, px: 3, py: 2.5, borderRadius: "12px 12px 0 0" }}>
-    <Box display="flex" alignItems="center" gap={1.5}>
-      <Box sx={{ color: "rgba(255,255,255,0.85)", display: "flex" }}>{icon}</Box>
-      <Box>
-        <Typography variant="h6" fontWeight="bold" color="white">{title}</Typography>
-        {subtitle && <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.7)" }}>{subtitle}</Typography>}
-      </Box>
-    </Box>
-  </Box>
-);
 
 const InfoRow = ({ label, value, chip }) => (
   <Box display="flex" justifyContent="space-between" alignItems="center"
@@ -53,7 +45,7 @@ const Unit = () => {
 
   if (loading) return (
     <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-      <CircularProgress sx={{ color: "#1a237e" }} />
+      <CircularProgress sx={{ color: "#0854ed" }} />
     </Box>
   );
   if (!unit) return (
@@ -63,15 +55,15 @@ const Unit = () => {
   );
 
   return (
-    <Box>
-      <Typography variant="h5" fontWeight="bold" mb={2}>My Unit & Membership</Typography>
-      {success && <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSuccess("")}>{success}</Alert>}
+    <Box className="hs-portal-page hs-portal-resident-Unit">
+      <PortalPageTitle subtitle="View your unit, membership, and registered vehicles.">My Unit & Membership</PortalPageTitle>
+      {success && <Toast severity="success" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSuccess("")}>{success}</Toast>}
 
       <Grid container spacing={3}>
         {/* ── Unit Details ── */}
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}   >
           <Card sx={{ borderRadius: 2, boxShadow: "0 2px 12px rgba(0,0,0,0.08)", overflow: "hidden" }}>
-            <Box sx={{ bgcolor: "#1a237e", px: 2.5, py: 2, display: "flex", alignItems: "center", gap: 1.5 }}>
+            <Box className="hs-portal-card-header" sx={{ bgcolor: "#0854ed", px: 2.5, py: 2, display: "flex", alignItems: "center", gap: 1.5 }}>
               <Box sx={{ bgcolor: "rgba(255,255,255,0.15)", borderRadius: "50%", p: 1, display: "flex" }}>
                 <HomeIcon sx={{ color: "white", fontSize: 22 }} />
               </Box>
@@ -96,9 +88,9 @@ const Unit = () => {
         </Grid>
 
         {/* ── My Vehicles ── */}
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}   >
           <Card sx={{ borderRadius: 2, boxShadow: "0 2px 12px rgba(0,0,0,0.08)", overflow: "hidden" }}>
-            <Box sx={{ bgcolor: "#2e7d32", px: 2.5, py: 2,
+            <Box className="hs-portal-card-header" sx={{ bgcolor: "#2e7d32", px: 2.5, py: 2,
               display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <Box display="flex" alignItems="center" gap={1.5}>
                 <Box sx={{ bgcolor: "rgba(255,255,255,0.15)", borderRadius: "50%", p: 1, display: "flex" }}>
@@ -141,7 +133,7 @@ const Unit = () => {
       </Grid>
 
       {/* ── Add Vehicle Dialog ── */}
-      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+      <AdminDialog open={open} onClose={() => setOpen(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
         <ModalHeader icon={<DirectionsCarIcon />} title="Add Vehicle"
           subtitle="Register your vehicle details" color="#2e7d32" />
         <DialogContent sx={{ pt: 3, pb: 1, px: 3 }}>
@@ -162,7 +154,7 @@ const Unit = () => {
           <Button variant="contained" onClick={handleAddVehicle}
             sx={{ bgcolor: "#2e7d32", borderRadius: 2, px: 3 }}>Add Vehicle</Button>
         </DialogActions>
-      </Dialog>
+      </AdminDialog>
     </Box>
   );
 };

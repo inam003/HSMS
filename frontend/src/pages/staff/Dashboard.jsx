@@ -1,3 +1,5 @@
+import { PortalPageTitle, PortalStatCard as StatCard } from "../../components/common/PortalUI";
+import Toast from "../../components/common/Toast";
 import { useEffect, useState } from "react";
 import {
   Box, Typography, Card, CardContent, Grid, Chip, Alert, Button,
@@ -13,23 +15,6 @@ import AccessTimeIcon  from "@mui/icons-material/AccessTime";
 import { useAuth } from "../../context/AuthContext";
 import api from "../../api/axios";
 
-const StatCard = ({ label, value, color, bg, icon }) => (
-  <Card sx={{ borderRadius: 2, borderLeft: `5px solid ${color}`,
-    boxShadow: "0 2px 12px rgba(0,0,0,0.08)", height: "100%" }}>
-    <CardContent sx={{ p: 3 }}>
-      <Box display="flex" justifyContent="space-between" alignItems="center">
-        <Box>
-          <Typography variant="body2" color="text.secondary" fontWeight="medium" mb={1}>{label}</Typography>
-          <Typography variant="h3" fontWeight="bold" color={color} lineHeight={1}>{value}</Typography>
-        </Box>
-        <Box sx={{ bgcolor: bg, borderRadius: "50%", width: 56, height: 56, flexShrink: 0,
-          display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Box sx={{ color, display: "flex", "& svg": { fontSize: 28 } }}>{icon}</Box>
-        </Box>
-      </Box>
-    </CardContent>
-  </Card>
-);
 
 const InfoRow = ({ label, value }) => (
   <Box display="flex" justifyContent="space-between" alignItems="center"
@@ -95,41 +80,41 @@ const StaffDashboard = () => {
 
   if (loading) return (
     <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-      <CircularProgress sx={{ color: "#1a237e" }} />
+      <CircularProgress sx={{ color: "#0854ed" }} />
     </Box>
   );
 
   return (
-    <Box>
-      <Typography variant="h5" fontWeight="bold" mb={0.5}>Staff Dashboard</Typography>
+    <Box className="hs-portal-page hs-portal-staff-Dashboard">
+      <PortalPageTitle subtitle="Your profile, attendance, and shift activity at a glance.">Staff Dashboard</PortalPageTitle>
       <Typography variant="body2" color="text.secondary" mb={2}>
         Welcome back, {user?.Name} — {user?.Type}
       </Typography>
 
-      {success && <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSuccess("")}>{success}</Alert>}
-      {error   && <Alert severity="error"   sx={{ mb: 2, borderRadius: 2 }} onClose={() => setError("")}>{error}</Alert>}
+      {success && <Toast severity="success" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSuccess("")}>{success}</Toast>}
+      {error   && <Toast severity="error"   sx={{ mb: 2, borderRadius: 2 }} onClose={() => setError("")}>{error}</Toast>}
 
       {/* ── Stat Cards ── */}
       <Grid container spacing={2} mb={3}>
-        <Grid item xs={6} sm={3}>
+        <Grid size={{ xs: 6, sm: 3 }}   >
           <StatCard label="Days Present"  value={presentCount}  color="#2e7d32" bg="#e8f5e9" icon={<CheckCircleIcon />} />
         </Grid>
-        <Grid item xs={6} sm={3}>
+        <Grid size={{ xs: 6, sm: 3 }}   >
           <StatCard label="Half Days"     value={halfDayCount}  color="#f57f17" bg="#fff8e1" icon={<AccessTimeIcon />} />
         </Grid>
-        <Grid item xs={6} sm={3}>
+        <Grid size={{ xs: 6, sm: 3 }}   >
           <StatCard label="Absent"        value={absentCount}   color="#c62828" bg="#ffebee" icon={<EventNoteIcon />} />
         </Grid>
-        <Grid item xs={6} sm={3}>
-          <StatCard label="Total Records" value={attendance.length} color="#4527a0" bg="#ede7f6" icon={<BadgeIcon />} />
+        <Grid size={{ xs: 6, sm: 3 }}   >
+          <StatCard label="Total Records" value={attendance.length} color="#0854ed" bg="#e9f1ff" icon={<BadgeIcon />} />
         </Grid>
       </Grid>
 
       <Grid container spacing={3} mb={3}>
         {/* ── Profile Card ── */}
-        <Grid item xs={12} md={5}>
+        <Grid size={{ xs: 12, md: 5 }}   >
           <Card sx={{ borderRadius: 2, boxShadow: "0 2px 12px rgba(0,0,0,0.08)", overflow: "hidden", height: "100%" }}>
-            <Box sx={{ bgcolor: "#4527a0", px: 2.5, py: 2, display: "flex", alignItems: "center", gap: 1.5 }}>
+            <Box className="hs-portal-card-header" sx={{ bgcolor: "#0854ed", px: 2.5, py: 2, display: "flex", alignItems: "center", gap: 1.5 }}>
               <Box sx={{ bgcolor: "rgba(255,255,255,0.15)", borderRadius: "50%", p: 1, display: "flex" }}>
                 <BadgeIcon sx={{ color: "white", fontSize: 22 }} />
               </Box>
@@ -160,9 +145,9 @@ const StaffDashboard = () => {
         </Grid>
 
         {/* ── Today's Attendance ── */}
-        <Grid item xs={12} md={7}>
+        <Grid size={{ xs: 12, md: 7 }}   >
           <Card sx={{ borderRadius: 2, boxShadow: "0 2px 12px rgba(0,0,0,0.08)", overflow: "hidden", height: "100%" }}>
-            <Box sx={{ bgcolor: checkedInToday ? "#2e7d32" : "#1a237e", px: 2.5, py: 2,
+            <Box className="hs-portal-card-header" sx={{ bgcolor: checkedInToday ? "#2e7d32" : "#0854ed", px: 2.5, py: 2,
               display: "flex", alignItems: "center", gap: 1.5 }}>
               <Box sx={{ bgcolor: "rgba(255,255,255,0.15)", borderRadius: "50%", p: 1, display: "flex" }}>
                 <AccessTimeIcon sx={{ color: "white", fontSize: 22 }} />
@@ -216,14 +201,14 @@ const StaffDashboard = () => {
       <Card sx={{ borderRadius: 2, boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
         <CardContent>
           <Box display="flex" alignItems="center" gap={1} mb={2}>
-            <Box sx={{ bgcolor: "#4527a0", borderRadius: 1.5, p: 0.8, display: "flex" }}>
+            <Box sx={{ bgcolor: "#0854ed", borderRadius: 1.5, p: 0.8, display: "flex" }}>
               <EventNoteIcon sx={{ color: "white", fontSize: 18 }} />
             </Box>
             <Typography variant="h6" fontWeight="bold">Recent Attendance</Typography>
           </Box>
           <TableContainer>
             <Table size="small">
-              <TableHead sx={{ bgcolor: "#4527a0" }}>
+              <TableHead sx={{ bgcolor: "#0854ed" }}>
                 <TableRow>
                   {["Date", "Check-In", "Check-Out", "Hours", "Status"].map((h) => (
                     <TableCell key={h} sx={{ color: "white", fontWeight: "bold" }}>{h}</TableCell>

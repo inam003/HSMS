@@ -1,31 +1,35 @@
+import AdminDialog, { AdminDialogHeader as ModalHeader, AdminDeleteDialog } from "../../components/common/AdminDialog";
+import Toast from "../../components/common/Toast";
 import { useEffect, useState } from "react";
 import {
-  Box, Typography, Button, Card, CardContent, CardActions, Grid, Dialog,
-  DialogContent, DialogActions, TextField, Select, MenuItem, FormControl,
-  InputLabel, Alert, Chip, IconButton, Tooltip, Divider, Avatar, CircularProgress
+  Box, Typography, Button, DialogContent, DialogActions, TextField, Select, MenuItem, FormControl,
+  InputLabel, Divider, CircularProgress
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
+import EditOutlined from "@mui/icons-material/EditOutlined";
+import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
 import PublishIcon from "@mui/icons-material/Publish";
 import CampaignIcon from "@mui/icons-material/Campaign";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import SearchRounded from "@mui/icons-material/SearchRounded";
+import FilterAltOutlined from "@mui/icons-material/FilterAltOutlined";
+import CalendarTodayOutlined from "@mui/icons-material/CalendarTodayOutlined";
+import KeyboardArrowDownRounded from "@mui/icons-material/KeyboardArrowDownRounded";
+import AccessTimeRounded from "@mui/icons-material/AccessTimeRounded";
+import ErrorOutlineRounded from "@mui/icons-material/ErrorOutlineRounded";
+import LocationOnRounded from "@mui/icons-material/LocationOnRounded";
 import api from "../../api/axios";
+import "./Members.css";
+import "./Notices.css";
 
-const ModalHeader = ({ icon, title, subtitle, color = "#1a237e" }) => (
-  <Box sx={{ bgcolor: color, px: 3, py: 2.5, borderRadius: "12px 12px 0 0" }}>
-    <Box display="flex" alignItems="center" gap={1.5}>
-      <Box sx={{ color: "rgba(255,255,255,0.85)", display: "flex" }}>{icon}</Box>
-      <Box>
-        <Typography variant="h6" fontWeight="bold" color="white">{title}</Typography>
-        {subtitle && <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.7)" }}>{subtitle}</Typography>}
-      </Box>
-    </Box>
-  </Box>
-);
+const noticeStatus = notice => notice.IsActive ? "Active" : notice.ExpiredAt ? "Expired" : "Draft";
+const stamp = value => {
+  const date = new Date(value);
+  if (!value || Number.isNaN(date.getTime())) return "—";
+  return `${date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })} · ${date.toLocaleTimeString("en-GB")}`;
+};
+const typeClass = value => ["Emergency", "Meeting", "Maintenance", "General"].includes(value) ? value.toLowerCase() : "general";
 
-const priorityColors = { High: "error", Medium: "warning", Low: "success" };
-const typeColors     = { Emergency: "error", Meeting: "info", Maintenance: "warning", General: "default" };
 
 const validate = (form) => ({
   Title:   !form.Title.trim()   ? "Title is required"   : form.Title.trim().length < 3 ? "Title too short (min 3 chars)" : "",
@@ -34,6 +38,16 @@ const validate = (form) => ({
 
 const Notices = () => {
   const [notices, setNotices]       = useState([]);
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("");
+  const [category, setCategory] = useState("");
+  const [priority, setPriority] = useState("");
+  const [loadError, setLoadError] = useState("");
+  const [actionError, setActionError] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const [busyId, setBusyId] = useState(null);
+  const query = search.trim().toLowerCase();
+  const filtered = notices.filter(notice => (!status || noticeStatus(notice) === status) && (!category || notice.NoticeType === category) && (!priority || notice.Priority === priority) && [notice.Title, notice.Content].some(value => (value || "").toLowerCase().includes(query)));
   const [open, setOpen]             = useState(false);
   const [editId, setEditId]         = useState(null);
   const [form, setForm]             = useState({ Title: "", Content: "", NoticeType: "General", Priority: "Medium", ExpiryDate: "" });
@@ -46,7 +60,8 @@ const Notices = () => {
   const [loading, setLoading]           = useState(true);
 
   const load = async () => {
-    try { const { data } = await api.get("/notices"); setNotices(data); }
+    try { setLoadError(""); const { data } = await api.get("/notices"); setNotices(data); }
+    catch (e) { setLoadError(e.response?.data?.message || "Unable to load notices. Please try again."); }
     finally { setLoading(false); }
   };
   useEffect(() => { load(); }, []);
@@ -81,84 +96,82 @@ const Notices = () => {
   };
 
   const handlePublish = async (id, emergencyFlag = false) => {
-    await api.put(`/notices/${id}/publish`, { emergencyFlag }); load();
+    setBusyId(id); setActionError("");
+    try {
+      await api.put(`/notices/${id}/publish`, { emergencyFlag });
+      setSuccess(emergencyFlag ? "Notice published as an emergency." : "Notice published.");
+      await load();
+    } catch (e) { setActionError(e.response?.data?.message || "Unable to publish this notice. Please try again."); }
+    finally { setBusyId(null); }
   };
 
   const handleExpire = async (id) => {
-    await api.put(`/notices/${id}/expire`); load();
+    setBusyId(id); setActionError("");
+    try {
+      await api.put(`/notices/${id}/expire`);
+      setSuccess("Notice expired."); await load();
+    } catch (e) { setActionError(e.response?.data?.message || "Unable to expire this notice. Please try again."); }
+    finally { setBusyId(null); }
   };
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
-    setDeleting(true);
+    setDeleting(true); setDeleteError("");
     try {
       await api.delete(`/notices/${deleteTarget.id}`);
-      setSuccess("Notice deleted."); load();
-    } catch { /* ignore */ }
-    finally { setDeleting(false); setDeleteTarget(null); }
+      setSuccess("Notice deleted."); setDeleteTarget(null); load();
+    } catch (e) { setDeleteError(e.response?.data?.message || "Unable to delete this notice. Please try again."); }
+    finally { setDeleting(false); }
   };
 
-  if (loading) return (
-    <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-      <CircularProgress sx={{ color: "#1a237e" }} />
-    </Box>
-  );
-
   return (
-    <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h5" fontWeight="bold">Notice Board Management</Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpen()}
-          sx={{ bgcolor: "#1a237e", borderRadius: 2 }}>Create Notice</Button>
-      </Box>
-      {success && <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSuccess("")}>{success}</Alert>}
-
-      <Grid container spacing={2}>
-        {notices.map((n) => (
-          <Grid item xs={12} md={6} key={n._id}>
-            <Card sx={{ borderLeft: `4px solid ${n.NoticeType === "Emergency" ? "#c62828" : "#1a237e"}`, borderRadius: 2 }}>
-              <CardContent>
-                <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
-                  <Typography variant="h6">{n.Title}</Typography>
-                  <Chip label={n.IsActive ? "Active" : "Draft"} color={n.IsActive ? "success" : "default"} size="small" />
-                </Box>
-                <Box display="flex" gap={1} mb={1}>
-                  <Chip label={n.NoticeType} color={typeColors[n.NoticeType]} size="small" />
-                  <Chip label={n.Priority} color={priorityColors[n.Priority]} size="small" />
-                </Box>
-                <Typography variant="body2" color="text.secondary">{n.Content}</Typography>
-                <Typography variant="caption" color="text.secondary" mt={1} display="block">
-                  Published: {new Date(n.PublishDate).toLocaleString()}
-                </Typography>
-              </CardContent>
-              <CardActions>
-                {!n.IsActive && <Button size="small" startIcon={<PublishIcon />} color="success" onClick={() => handlePublish(n._id)}>Publish</Button>}
-                {!n.IsActive && <Button size="small" color="error" onClick={() => handlePublish(n._id, true)}>Publish as Emergency</Button>}
-                {n.IsActive && <Button size="small" color="warning" onClick={() => handleExpire(n._id)}>Expire</Button>}
-                <Tooltip title="Edit">
-                  <IconButton size="small" onClick={() => handleOpen(n)}><EditIcon /></IconButton>
-                </Tooltip>
-                <Tooltip title="Delete">
-                  <IconButton size="small" color="error" onClick={() => setDeleteTarget({ id: n._id, title: n.Title })}><DeleteIcon /></IconButton>
-                </Tooltip>
-              </CardActions>
-            </Card>
-          </Grid>
-        ))}
-        {!notices.length && <Grid item xs={12}><Typography color="text.secondary" align="center">No notices found</Typography></Grid>}
-      </Grid>
+    <div className="hs-notice-management">
+      <div className="hs-page-heading hs-members-heading hs-notice-heading"><div><h1>Notice Board Management</h1><p>Publish announcements and manage society notices.</p></div><button className="hs-resident-add" onClick={() => handleOpen()}><AddIcon/>Create notice</button></div>
+      {success && <Toast severity="success" sx={{ mb: 2 }} onClose={() => setSuccess("")}>{success}</Toast>}
+      {loadError && <Toast severity="error" sx={{ mb: 2 }} action={<Button color="inherit" onClick={() => { setLoading(true); load(); }}>Retry</Button>}>{loadError}</Toast>}
+      {actionError && <Toast severity="error" sx={{ mb: 2 }} onClose={() => setActionError("")}>{actionError}</Toast>}
+      <section className="hs-panel hs-notice-toolbar" aria-label="Filter notices">
+        <div className="hs-notice-tabs" role="group" aria-label="Filter notices by status">
+          {[["", "All notices"], ["Active", "Active"], ["Draft", "Drafts"], ["Expired", "Expired"]].map(([value, label]) => <button key={label} className={status === value ? "active" : ""} aria-pressed={status === value} onClick={() => setStatus(value)}>{label}<span>{value ? notices.filter(notice => noticeStatus(notice) === value).length : notices.length}</span></button>)}
+        </div>
+        <div className="hs-residents-filters hs-notice-filters"><label className="hs-resident-search"><SearchRounded/><input type="search" aria-label="Search notice titles and content" placeholder="Search notices..." value={search} onChange={e => setSearch(e.target.value)}/></label><div className="hs-notice-selects">
+          <div className="hs-resident-filter"><FilterAltOutlined/><select aria-label="Filter notices by category" value={category} onChange={e => setCategory(e.target.value)}><option value="">All categories</option>{["General", "Emergency", "Meeting", "Maintenance"].map(value => <option key={value} value={value}>{value}</option>)}</select><KeyboardArrowDownRounded/></div>
+          <div className="hs-resident-filter hs-notice-priority-filter"><CalendarTodayOutlined/><select aria-label="Filter notices by priority" value={priority} onChange={e => setPriority(e.target.value)}><option value="">All priorities</option>{["Low", "Medium", "High"].map(value => <option key={value} value={value}>{value}</option>)}</select><KeyboardArrowDownRounded/></div>
+        </div></div>
+      </section>
+      <section className="hs-notice-grid" aria-label="Society notices" aria-busy={loading}>
+        {loading ? <div className="hs-panel hs-loading" role="status"><CircularProgress size={28}/>Loading notices...</div> : filtered.map(notice => {
+          const state = noticeStatus(notice);
+          const isSOS = notice.NoticeType === "Emergency" && /SOS/i.test(notice.Title);
+          const locationMatch = isSOS && (notice.Content || "").match(/Location:\s*([\s\S]+)/i);
+          const content = locationMatch ? notice.Content.slice(0, locationMatch.index).trim() : notice.Content;
+          const disabled = busyId !== null;
+          return <article key={notice._id} className={`hs-panel hs-notice-card ${typeClass(notice.NoticeType)} ${state.toLowerCase()}`}>
+            <div className="hs-notice-card-heading"><h2>{isSOS && <WarningAmberIcon/>}{notice.Title}</h2><span className={`hs-notice-state ${state.toLowerCase()}`}>{state}</span></div>
+            <div className="hs-notice-tags-row"><span className={`hs-notice-type ${typeClass(notice.NoticeType)}`}>{notice.NoticeType}</span><span className={`hs-notice-priority ${["High", "Medium", "Low"].includes(notice.Priority) ? notice.Priority.toLowerCase() : "medium"}`}>{notice.Priority} priority</span></div>
+            <p className="hs-notice-content">{content}</p>
+            {locationMatch && <div className="hs-notice-location"><LocationOnRounded/><p>{locationMatch[1]}</p></div>}
+            <p className="hs-notice-published">{state === "Draft" ? "Created" : "Published"}: {stamp(state === "Draft" ? notice.createdAt : notice.PublishDate)}</p>
+            <div className="hs-notice-card-actions">
+              <div className="hs-notice-lifecycle">{notice.IsActive ? <button className="hs-notice-expire" disabled={disabled} onClick={() => handleExpire(notice._id)}><AccessTimeRounded/>{busyId === notice._id ? "Updating..." : "Expire notice"}</button> : <><button className="hs-notice-publish" disabled={disabled} onClick={() => handlePublish(notice._id)}><PublishIcon/>{busyId === notice._id ? "Updating..." : "Publish"}</button><button className="hs-notice-emergency" disabled={disabled} onClick={() => handlePublish(notice._id, true)}><ErrorOutlineRounded/>Publish as emergency</button></>}</div>
+              <div className="hs-resident-actions"><button disabled={disabled} title="Edit notice" aria-label={`Edit ${notice.Title}`} onClick={() => handleOpen(notice)}><EditOutlined/></button><button disabled={disabled} className="hs-resident-delete" title="Delete notice" aria-label={`Delete ${notice.Title}`} onClick={() => { setDeleteError(""); setDeleteTarget({ id: notice._id, title: notice.Title }); }}><DeleteOutlineRounded/></button></div>
+            </div>
+          </article>;
+        })}
+        {!loading && !filtered.length && <div className="hs-panel hs-empty">{loadError ? "Notice data unavailable" : notices.length ? "No notices match your search or filters." : "No notices yet. Create a notice to get started."}</div>}
+      </section>
 
       {/* ── Add / Edit Dialog ── */}
-      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+      <AdminDialog busy={saving} open={open} onClose={() => { if (!saving) setOpen(false); }} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
         <ModalHeader icon={<CampaignIcon />} title={editId ? "Edit Notice" : "Create Notice"}
           subtitle={editId ? "Update notice details" : "Fill in the notice information"} />
         <DialogContent sx={{ pt: 3, pb: 1, px: 3 }}>
-          {submitError && <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSubmitError("")}>{submitError}</Alert>}
+          {submitError && <Toast severity="error" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSubmitError("")}>{submitError}</Toast>}
           <TextField fullWidth label="Title" required value={form.Title}
             onChange={(e) => setForm({ ...form, Title: e.target.value })} {...field("Title")} />
           <TextField fullWidth label="Content" multiline rows={4} required value={form.Content}
             onChange={(e) => setForm({ ...form, Content: e.target.value })} {...field("Content")} />
-          <Box display="flex" gap={2} mt={1} mb={1}>
+          <Box display="flex" flexDirection={{ xs: "column", sm: "row" }} gap={2} mt={1} mb={1}>
             <FormControl fullWidth>
               <InputLabel>Notice Type</InputLabel>
               <Select value={form.NoticeType} label="Notice Type" onChange={(e) => setForm({ ...form, NoticeType: e.target.value })}>
@@ -177,36 +190,19 @@ const Notices = () => {
         </DialogContent>
         <Divider />
         <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
-          <Button onClick={() => setOpen(false)} sx={{ color: "#555", borderRadius: 2 }}>Cancel</Button>
+          <Button disabled={saving} onClick={() => setOpen(false)} sx={{ color: "#555", borderRadius: 2 }}>Cancel</Button>
           <Button variant="contained" onClick={handleSave} disabled={!isValid || saving}
-            sx={{ bgcolor: "#1a237e", borderRadius: 2, px: 3, minWidth: 130, "&:disabled": { bgcolor: "#c5cae9", color: "#fff" } }}>
+            sx={{ bgcolor: "#0854ed", borderRadius: 2, px: 3, minWidth: 130, "&:disabled": { bgcolor: "#c5cae9", color: "#fff" } }}>
             {saving ? <CircularProgress size={18} color="inherit" /> : (editId ? "Save Changes" : "Create Notice")}
           </Button>
         </DialogActions>
-      </Dialog>
+      </AdminDialog>
 
       {/* ── Delete Dialog ── */}
-      <Dialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3, overflow: "hidden" } }}>
-        <Box sx={{ bgcolor: "#c62828", height: 6 }} />
-        <DialogContent sx={{ pt: 4, pb: 2, px: 3, textAlign: "center" }}>
-          <Avatar sx={{ bgcolor: "#ffebee", width: 64, height: 64, mx: "auto", mb: 2 }}>
-            <WarningAmberIcon sx={{ color: "#c62828", fontSize: 36 }} />
-          </Avatar>
-          <Typography variant="h6" fontWeight="bold" mb={1}>Delete Notice?</Typography>
-          <Typography variant="body2" color="text.secondary">You are about to permanently delete</Typography>
-          <Typography fontWeight="bold" fontSize={15} mt={0.5} mb={1.5} color="#1a237e">"{deleteTarget?.title}"</Typography>
-          <Typography variant="body2" color="text.secondary">This action <strong>cannot be undone</strong>.</Typography>
-        </DialogContent>
-        <Divider />
-        <DialogActions sx={{ px: 3, py: 2, gap: 1, justifyContent: "center" }}>
-          <Button fullWidth variant="outlined" onClick={() => setDeleteTarget(null)} sx={{ borderRadius: 2, borderColor: "#ccc", color: "#555", py: 1 }}>Cancel</Button>
-          <Button fullWidth variant="contained" onClick={handleDelete} disabled={deleting}
-            sx={{ borderRadius: 2, bgcolor: "#c62828", py: 1, "&:hover": { bgcolor: "#b71c1c" } }}>
-            {deleting ? <CircularProgress size={18} color="inherit" /> : "Yes, Delete"}
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+      <AdminDeleteDialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={handleDelete} busy={deleting} title="Delete Notice?" name={deleteTarget?.title}>
+        {deleteError && <Toast severity="error">{deleteError}</Toast>}
+      </AdminDeleteDialog>
+    </div>
   );
 };
 

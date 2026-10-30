@@ -22,6 +22,7 @@ export const publishNotice = async (req, res) => {
   const notice = await Notice.findById(req.params.id);
   if (!notice) return res.status(404).json({ message: "Notice not found" });
   notice.IsActive = true;
+  notice.ExpiredAt = null;
   notice.PublishDate = new Date();
   if (emergencyFlag) {
     notice.NoticeType = "Emergency";
@@ -32,7 +33,7 @@ export const publishNotice = async (req, res) => {
 };
 
 export const expireNotice = async (req, res) => {
-  const notice = await Notice.findByIdAndUpdate(req.params.id, { IsActive: false }, { new: true });
+  const notice = await Notice.findByIdAndUpdate(req.params.id, { IsActive: false, ExpiredAt: new Date() }, { new: true });
   if (!notice) return res.status(404).json({ message: "Notice not found" });
   res.json(notice);
 };

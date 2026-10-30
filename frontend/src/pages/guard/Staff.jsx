@@ -1,7 +1,10 @@
+import { PortalPageTitle, PortalStatCard as StatCard } from "../../components/common/PortalUI";
+import Toast from "../../components/common/Toast";
+import AdminDialog, { AdminDialogHeader as ModalHeader } from "../../components/common/AdminDialog";
 import { useEffect, useState } from "react";
 import {
   Box, Typography, Button, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Paper, Dialog, DialogContent, DialogActions,
+  TableHead, TableRow, Paper, DialogContent, DialogActions,
   TextField, Alert, Chip, Divider, CircularProgress, Grid, Card, CardContent
 } from "@mui/material";
 import KeyIcon        from "@mui/icons-material/Key";
@@ -9,35 +12,7 @@ import BadgeIcon      from "@mui/icons-material/Badge";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import api from "../../api/axios";
 
-const StatCard = ({ label, value, color, bg, icon }) => (
-  <Card sx={{ borderRadius: 2, borderLeft: `5px solid ${color}`,
-    boxShadow: "0 2px 12px rgba(0,0,0,0.08)", height: "100%" }}>
-    <CardContent sx={{ p: 2.5 }}>
-      <Box display="flex" justifyContent="space-between" alignItems="center">
-        <Box>
-          <Typography variant="body2" color="text.secondary" fontWeight="medium" mb={0.5}>{label}</Typography>
-          <Typography variant="h3" fontWeight="bold" color={color} lineHeight={1}>{value}</Typography>
-        </Box>
-        <Box sx={{ bgcolor: bg, borderRadius: "50%", width: 48, height: 48, flexShrink: 0,
-          display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Box sx={{ color, display: "flex", "& svg": { fontSize: 24 } }}>{icon}</Box>
-        </Box>
-      </Box>
-    </CardContent>
-  </Card>
-);
 
-const ModalHeader = ({ icon, title, subtitle, color = "#4527a0" }) => (
-  <Box sx={{ bgcolor: color, px: 3, py: 2.5, borderRadius: "12px 12px 0 0" }}>
-    <Box display="flex" alignItems="center" gap={1.5}>
-      <Box sx={{ color: "rgba(255,255,255,0.85)", display: "flex" }}>{icon}</Box>
-      <Box>
-        <Typography variant="h6" fontWeight="bold" color="white">{title}</Typography>
-        {subtitle && <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.7)" }}>{subtitle}</Typography>}
-      </Box>
-    </Box>
-  </Box>
-);
 
 const GuardStaff = () => {
   const [staff, setStaff]           = useState([]);
@@ -86,32 +61,32 @@ const GuardStaff = () => {
 
   if (loading) return (
     <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-      <CircularProgress sx={{ color: "#4527a0" }} />
+      <CircularProgress sx={{ color: "#0854ed" }} />
     </Box>
   );
 
   return (
-    <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h5" fontWeight="bold">Staff & Vendor Attendance</Typography>
-        <Button variant="contained" onClick={handleOpen} sx={{ bgcolor: "#4527a0", borderRadius: 2 }}>
+    <Box className="hs-portal-page hs-portal-guard-Staff">
+      <Box className="hs-portal-heading-row" display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+        <PortalPageTitle subtitle="Review staff details and validate entry codes.">Staff & Vendor Attendance</PortalPageTitle>
+        <Button variant="contained" onClick={handleOpen} sx={{ bgcolor: "#0854ed", borderRadius: 2 }}>
           Validate Entry Code
         </Button>
       </Box>
-      {success && <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSuccess("")}>{success}</Alert>}
+      {success && <Toast severity="success" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSuccess("")}>{success}</Toast>}
 
       <Grid container spacing={2} mb={3}>
-        <Grid item xs={6}>
-          <StatCard label="Total Staff & Vendors" value={staff.length} color="#4527a0" bg="#ede7f6" icon={<BadgeIcon />} />
+        <Grid size={{ xs: 6 }}  >
+          <StatCard label="Total Staff & Vendors" value={staff.length} color="#0854ed" bg="#e9f1ff" icon={<BadgeIcon />} />
         </Grid>
-        <Grid item xs={6}>
+        <Grid size={{ xs: 6 }}  >
           <StatCard label="Active Entry Codes" value={staff.filter((s) => s.Entry_Code).length} color="#2e7d32" bg="#e8f5e9" icon={<CheckCircleIcon />} />
         </Grid>
       </Grid>
 
       <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
         <Table>
-          <TableHead sx={{ bgcolor: "#4527a0" }}>
+          <TableHead sx={{ bgcolor: "#0854ed" }}>
             <TableRow>
               {["Name", "Type", "CNIC", "Entry Code", "Rating"].map((h) => (
                 <TableCell key={h} sx={{ color: "white", fontWeight: "bold" }}>{h}</TableCell>
@@ -137,10 +112,10 @@ const GuardStaff = () => {
       </TableContainer>
 
       {/* ── Validate Entry Code Dialog ── */}
-      <Dialog open={codeOpen} onClose={() => setCodeOpen(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+      <AdminDialog open={codeOpen} onClose={() => setCodeOpen(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
         <ModalHeader icon={<KeyIcon />} title="Validate Staff Entry Code" subtitle="Enter the code shown on staff's profile" />
         <DialogContent sx={{ pt: 3, pb: 1, px: 3 }}>
-          {codeError && <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setCodeError("")}>{codeError}</Alert>}
+          {codeError && <Toast severity="error" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setCodeError("")}>{codeError}</Toast>}
           <TextField
             fullWidth required label="Entry Code" value={code}
             onChange={(e) => { setCode(e.target.value.toUpperCase()); setValidated(null); setCodeError(""); }}
@@ -161,8 +136,8 @@ const GuardStaff = () => {
           <Button onClick={() => setCodeOpen(false)} sx={{ color: "#555", borderRadius: 2 }}>Cancel</Button>
           {!validated ? (
             <Button variant="outlined" onClick={handleValidate} disabled={!code.trim() || validating}
-              sx={{ borderColor: "#4527a0", color: "#4527a0", borderRadius: 2, minWidth: 110 }}>
-              {validating ? <CircularProgress size={18} sx={{ color: "#4527a0" }} /> : "Validate"}
+              sx={{ borderColor: "#0854ed", color: "#0854ed", borderRadius: 2, minWidth: 110 }}>
+              {validating ? <CircularProgress size={18} sx={{ color: "#0854ed" }} /> : "Validate"}
             </Button>
           ) : (
             <Button variant="contained" onClick={handleCheckin} disabled={confirming}
@@ -171,7 +146,7 @@ const GuardStaff = () => {
             </Button>
           )}
         </DialogActions>
-      </Dialog>
+      </AdminDialog>
     </Box>
   );
 };

@@ -1,3 +1,4 @@
+import ToastProvider from "./components/common/ToastProvider";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/common/ProtectedRoute";
@@ -5,6 +6,7 @@ import Layout from "./components/common/Layout";
 
 // Public
 import Login from "./pages/Login";
+import Landing from "./pages/Landing";
 
 // Admin Pages
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -45,11 +47,12 @@ import StaffAttendance from "./pages/staff/Attendance";
 
 function App() {
   return (
+    <ToastProvider>
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Default redirect */}
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          {/* Public landing page */}
+          <Route path="/" element={<Landing />} />
 
           {/* Public */}
           <Route path="/login" element={<Login />} />
@@ -136,6 +139,7 @@ function App() {
         </Routes>
       </BrowserRouter>
     </AuthProvider>
+    </ToastProvider>
   );
 }
 

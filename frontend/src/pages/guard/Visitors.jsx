@@ -1,7 +1,10 @@
+import { PortalPageTitle, PortalStatCard as StatCard } from "../../components/common/PortalUI";
+import Toast from "../../components/common/Toast";
+import AdminDialog, { AdminDialogHeader as ModalHeader } from "../../components/common/AdminDialog";
 import { useEffect, useState } from "react";
 import {
   Box, Typography, Button, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Paper, Dialog, DialogContent, DialogActions,
+  TableHead, TableRow, Paper, DialogContent, DialogActions,
   TextField, Alert, Chip, Tabs, Tab, Select, MenuItem, FormControl, InputLabel,
   FormHelperText, Divider, CircularProgress, Grid, Card, CardContent
 } from "@mui/material";
@@ -12,35 +15,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import VerifiedIcon from "@mui/icons-material/Verified";
 import api from "../../api/axios";
 
-const StatCard = ({ label, value, color, bg, icon }) => (
-  <Card sx={{ borderRadius: 2, borderLeft: `5px solid ${color}`,
-    boxShadow: "0 2px 12px rgba(0,0,0,0.08)", height: "100%" }}>
-    <CardContent sx={{ p: 2.5 }}>
-      <Box display="flex" justifyContent="space-between" alignItems="center">
-        <Box>
-          <Typography variant="body2" color="text.secondary" fontWeight="medium" mb={0.5}>{label}</Typography>
-          <Typography variant="h3" fontWeight="bold" color={color} lineHeight={1}>{value}</Typography>
-        </Box>
-        <Box sx={{ bgcolor: bg, borderRadius: "50%", width: 48, height: 48, flexShrink: 0,
-          display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Box sx={{ color, display: "flex", "& svg": { fontSize: 24 } }}>{icon}</Box>
-        </Box>
-      </Box>
-    </CardContent>
-  </Card>
-);
 
-const ModalHeader = ({ icon, title, subtitle, color = "#2e7d32" }) => (
-  <Box sx={{ bgcolor: color, px: 3, py: 2.5, borderRadius: "12px 12px 0 0" }}>
-    <Box display="flex" alignItems="center" gap={1.5}>
-      <Box sx={{ color: "rgba(255,255,255,0.85)", display: "flex" }}>{icon}</Box>
-      <Box>
-        <Typography variant="h6" fontWeight="bold" color="white">{title}</Typography>
-        {subtitle && <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.7)" }}>{subtitle}</Typography>}
-      </Box>
-    </Box>
-  </Box>
-);
 
 const validate = (form) => ({
   Name:    !form.Name.trim()    ? "Visitor name is required"     : "",
@@ -107,27 +82,27 @@ const GuardVisitors = () => {
 
   if (loading) return (
     <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-      <CircularProgress sx={{ color: "#1a237e" }} />
+      <CircularProgress sx={{ color: "#0854ed" }} />
     </Box>
   );
 
   return (
-    <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h5" fontWeight="bold">Visitor Entry & Exit</Typography>
+    <Box className="hs-portal-page hs-portal-guard-Visitors">
+      <Box className="hs-portal-heading-row" display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+        <PortalPageTitle subtitle="Record visitor arrivals and departures at the gate.">Visitor Entry & Exit</PortalPageTitle>
         <Button variant="contained" startIcon={<LoginIcon />} onClick={handleOpen}
           sx={{ bgcolor: "#2e7d32", borderRadius: 2 }}>Log Entry</Button>
       </Box>
-      {success && <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSuccess("")}>{success}</Alert>}
+      {success && <Toast severity="success" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSuccess("")}>{success}</Toast>}
 
       <Grid container spacing={2} mb={3}>
-        <Grid item xs={4}>
+        <Grid size={{ xs: 4 }}  >
           <StatCard label="Currently Inside" value={inside.length} color="#1565c0" bg="#e3f2fd" icon={<PeopleIcon />} />
         </Grid>
-        <Grid item xs={4}>
-          <StatCard label="Visitors Today"   value={todayVisitors.length} color="#4527a0" bg="#ede7f6" icon={<CheckCircleIcon />} />
+        <Grid size={{ xs: 4 }}  >
+          <StatCard label="Visitors Today"   value={todayVisitors.length} color="#0854ed" bg="#e9f1ff" icon={<CheckCircleIcon />} />
         </Grid>
-        <Grid item xs={4}>
+        <Grid size={{ xs: 4 }}  >
           <StatCard label="Pre-Approved"     value={preApprovedToday} color="#2e7d32" bg="#e8f5e9" icon={<VerifiedIcon />} />
         </Grid>
       </Grid>
@@ -139,7 +114,7 @@ const GuardVisitors = () => {
 
       <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
         <Table>
-          <TableHead sx={{ bgcolor: "#1a237e" }}>
+          <TableHead sx={{ bgcolor: "#0854ed" }}>
             <TableRow>
               {["Name", "Contact", "Purpose", "Unit", "Check-In", "Pre-Approved", tab === 0 ? "Action" : "Check-Out"].map((h) => (
                 <TableCell key={h} sx={{ color: "white", fontWeight: "bold" }}>{h}</TableCell>
@@ -170,10 +145,10 @@ const GuardVisitors = () => {
       </TableContainer>
 
       {/* ── Log Entry Dialog ── */}
-      <Dialog open={open} onClose={() => !entering && setOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+      <AdminDialog open={open} onClose={() => !entering && setOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
         <ModalHeader icon={<LoginIcon />} title="Log Visitor Entry" subtitle="Fill in visitor details to record entry" />
         <DialogContent sx={{ pt: 3, pb: 1, px: 3 }}>
-          {submitError && <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSubmitError("")}>{submitError}</Alert>}
+          {submitError && <Toast severity="error" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSubmitError("")}>{submitError}</Toast>}
           <Box display="flex" gap={2} mb={1}>
             <TextField fullWidth label="Visitor Name" required value={form.Name}
               onChange={(e) => setForm({ ...form, Name: e.target.value })} {...field("Name")} />
@@ -203,7 +178,7 @@ const GuardVisitors = () => {
             {entering ? <CircularProgress size={18} color="inherit" /> : "Log Entry"}
           </Button>
         </DialogActions>
-      </Dialog>
+      </AdminDialog>
     </Box>
   );
 };

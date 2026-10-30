@@ -1,3 +1,4 @@
+import { PortalPageTitle } from "../../components/common/PortalUI";
 import { useEffect, useState } from "react";
 import {
   Box, Typography, Card, CardContent, Grid, Chip, Alert, CircularProgress
@@ -13,7 +14,7 @@ const typeColors = {
   Emergency:   "#c62828",
   Meeting:     "#1565c0",
   Maintenance: "#e65100",
-  General:     "#1a237e",
+  General:     "#0854ed",
 };
 const typeIcons = {
   Emergency:   <WarningAmberIcon />,
@@ -38,18 +39,18 @@ const Notices = () => {
 
   if (loading) return (
     <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-      <CircularProgress sx={{ color: "#1a237e" }} />
+      <CircularProgress sx={{ color: "#0854ed" }} />
     </Box>
   );
 
   return (
-    <Box>
-      <Typography variant="h5" fontWeight="bold" mb={2}>Notice Board</Typography>
+    <Box className="hs-portal-heading-row">
+      <PortalPageTitle subtitle="Stay informed about society announcements and updates.">Notice Board</PortalPageTitle>
 
       {/* ── Summary Pills ── */}
       <Box display="flex" gap={1} mb={2.5} flexWrap="wrap">
-        <Box sx={{ bgcolor: "#e8eaf6", borderRadius: 2, px: 2, py: 0.8 }}>
-          <Typography variant="caption" color="#1a237e" fontWeight="bold">{notices.length} Total</Typography>
+        <Box sx={{ bgcolor: "#e9f1ff", borderRadius: 2, px: 2, py: 0.8 }}>
+          <Typography variant="caption" color="#0854ed" fontWeight="bold">{notices.length} Total</Typography>
         </Box>
         {emergency.length > 0 && (
           <Box sx={{ bgcolor: "#ffebee", borderRadius: 2, px: 2, py: 0.8 }}>
@@ -74,11 +75,11 @@ const Notices = () => {
       {regular.length > 0 ? (
         <Grid container spacing={2}>
           {regular.map((n) => (
-            <Grid item xs={12} md={6} key={n._id}>
+            <Grid size={{ xs: 12, md: 6 }}    key={n._id}>
               <Card sx={{ borderRadius: 2, boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
                 height: "100%", display: "flex", flexDirection: "column" }}>
                 {/* Type-colored header */}
-                <Box sx={{ bgcolor: typeColors[n.NoticeType] || "#1a237e",
+                <Box className="hs-portal-card-header" sx={{ bgcolor: typeColors[n.NoticeType] || "#0854ed",
                   borderRadius: "8px 8px 0 0", px: 2.5, py: 1.8,
                   display: "flex", alignItems: "center", gap: 1 }}>
                   <Box sx={{ color: "white", display: "flex", "& svg": { fontSize: 20 } }}>

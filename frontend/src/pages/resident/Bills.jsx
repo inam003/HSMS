@@ -1,24 +1,16 @@
+import { PortalPageTitle } from "../../components/common/PortalUI";
+import Toast from "../../components/common/Toast";
+import AdminDialog, { AdminDialogHeader as ModalHeader } from "../../components/common/AdminDialog";
 import { useEffect, useState } from "react";
 import {
   Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Paper, Button, Chip, Dialog, DialogContent, DialogActions, TextField, Alert,
+  Paper, Button, Chip, DialogContent, DialogActions, TextField, Alert,
   Divider, CircularProgress
 } from "@mui/material";
 import PaymentIcon from "@mui/icons-material/Payment";
 import CreditCardIcon from "@mui/icons-material/CreditCard";
 import api from "../../api/axios";
 
-const ModalHeader = ({ icon, title, subtitle, color = "#2e7d32" }) => (
-  <Box sx={{ bgcolor: color, px: 3, py: 2.5, borderRadius: "12px 12px 0 0" }}>
-    <Box display="flex" alignItems="center" gap={1.5}>
-      <Box sx={{ color: "rgba(255,255,255,0.85)", display: "flex" }}>{icon}</Box>
-      <Box>
-        <Typography variant="h6" fontWeight="bold" color="white">{title}</Typography>
-        {subtitle && <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.7)" }}>{subtitle}</Typography>}
-      </Box>
-    </Box>
-  </Box>
-);
 
 const validate = (form) => ({
   cardHolder:  !form.cardHolder.trim()              ? "Card holder name is required"       : "",
@@ -75,18 +67,18 @@ const Bills = () => {
 
   if (loading) return (
     <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-      <CircularProgress sx={{ color: "#1a237e" }} />
+      <CircularProgress sx={{ color: "#0854ed" }} />
     </Box>
   );
 
   return (
-    <Box>
-      <Typography variant="h5" fontWeight="bold" mb={2}>My Bills & Payments</Typography>
-      {success && <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSuccess("")}>{success}</Alert>}
+    <Box className="hs-portal-page hs-portal-resident-Bills">
+      <PortalPageTitle subtitle="Review your bills, payment status, and outstanding dues.">My Bills & Payments</PortalPageTitle>
+      {success && <Toast severity="success" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSuccess("")}>{success}</Toast>}
 
       <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
         <Table>
-          <TableHead sx={{ bgcolor: "#1a237e" }}>
+          <TableHead sx={{ bgcolor: "#0854ed" }}>
             <TableRow>
               {["Type", "Amount", "Due Date", "Status", "Actions"].map((h) => (
                 <TableCell key={h} sx={{ color: "white", fontWeight: "bold" }}>{h}</TableCell>
@@ -116,11 +108,11 @@ const Bills = () => {
       </TableContainer>
 
       {/* ── Payment Dialog ── */}
-      <Dialog open={!!selected} onClose={() => !paying && setSelected(null)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+      <AdminDialog open={!!selected} onClose={() => !paying && setSelected(null)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
         <ModalHeader icon={<CreditCardIcon />} title={`Pay Bill — PKR ${selected?.Amount?.toLocaleString()}`}
           subtitle="Secure dummy payment gateway simulation" />
         <DialogContent sx={{ pt: 3, pb: 1, px: 3 }}>
-          {error && <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setError("")}>{error}</Alert>}
+          {error && <Toast severity="error" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setError("")}>{error}</Toast>}
           <Alert severity="info" sx={{ mb: 2, borderRadius: 2 }}>This is a dummy payment gateway simulation</Alert>
           <TextField fullWidth label="Card Holder Name" required value={payForm.cardHolder}
             onChange={(e) => setPayForm({ ...payForm, cardHolder: e.target.value })} {...field("cardHolder")} />
@@ -143,7 +135,7 @@ const Bills = () => {
             {paying ? <CircularProgress size={18} color="inherit" /> : `Pay PKR ${selected?.Amount?.toLocaleString()}`}
           </Button>
         </DialogActions>
-      </Dialog>
+      </AdminDialog>
     </Box>
   );
 };

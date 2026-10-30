@@ -1,3 +1,4 @@
+import { PortalPageTitle, PortalStatCard as StatCard, PortalSectionTitle as SectionHeader } from "../../components/common/PortalUI";
 import { useEffect, useState } from "react";
 import {
   Box, Typography, Grid, Card, CardContent, Table, TableBody, TableCell,
@@ -12,33 +13,6 @@ import RouteIcon         from "@mui/icons-material/Route";
 import { useAuth } from "../../context/AuthContext";
 import api from "../../api/axios";
 
-const StatCard = ({ label, value, color, bg, icon }) => (
-  <Card sx={{ borderRadius: 2, borderLeft: `5px solid ${color}`,
-    boxShadow: "0 2px 12px rgba(0,0,0,0.08)", height: "100%" }}>
-    <CardContent sx={{ p: 3 }}>
-      <Box display="flex" justifyContent="space-between" alignItems="center">
-        <Box>
-          <Typography variant="body2" color="text.secondary" fontWeight="medium" mb={1}>{label}</Typography>
-          <Typography variant="h3" fontWeight="bold" color={color} lineHeight={1}>{value}</Typography>
-        </Box>
-        <Box sx={{ bgcolor: bg, borderRadius: "50%", width: 56, height: 56, flexShrink: 0,
-          display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Box sx={{ color, display: "flex", "& svg": { fontSize: 28 } }}>{icon}</Box>
-        </Box>
-      </Box>
-    </CardContent>
-  </Card>
-);
-
-const SectionHeader = ({ icon, title, color }) => (
-  <Box display="flex" alignItems="center" gap={1} mb={2}>
-    <Box sx={{ bgcolor: color, borderRadius: 1.5, p: 0.8,
-      display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <Box sx={{ color: "white", display: "flex", "& svg": { fontSize: 18 } }}>{icon}</Box>
-    </Box>
-    <Typography variant="h6" fontWeight="bold">{title}</Typography>
-  </Box>
-);
 
 const GuardDashboard = () => {
   const { user } = useAuth();
@@ -64,13 +38,13 @@ const GuardDashboard = () => {
 
   if (loading) return (
     <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-      <CircularProgress sx={{ color: "#1a237e" }} />
+      <CircularProgress sx={{ color: "#0854ed" }} />
     </Box>
   );
 
   return (
-    <Box>
-      <Typography variant="h5" fontWeight="bold" mb={0.5}>Guard Dashboard</Typography>
+    <Box className="hs-portal-page hs-portal-guard-Dashboard">
+      <PortalPageTitle subtitle="Your gate activity, patrols, and security updates at a glance.">Guard Dashboard</PortalPageTitle>
       <Typography variant="body2" color="text.secondary" mb={2}>
         Gate: <strong>{user?.Assigned_Gate || "Main Gate"}</strong> &nbsp;|&nbsp; Shift: <strong>{user?.Shift_Timing || "—"}</strong>
       </Typography>
@@ -84,33 +58,33 @@ const GuardDashboard = () => {
 
       {/* ── Stat Cards ── */}
       <Grid container spacing={2} mb={3}>
-        <Grid item xs={6} sm={3}>
+        <Grid size={{ xs: 6, sm: 3 }}   >
           <StatCard label="Visitors Inside" value={insideNow}
             color="#1565c0" bg="#e3f2fd" icon={<PeopleIcon />} />
         </Grid>
-        <Grid item xs={6} sm={3}>
+        <Grid size={{ xs: 6, sm: 3 }}   >
           <StatCard label="Gate Access Today" value={todayAccess}
             color="#6a1b9a" bg="#f3e5f5" icon={<MeetingRoomIcon />} />
         </Grid>
-        <Grid item xs={6} sm={3}>
+        <Grid size={{ xs: 6, sm: 3 }}   >
           <StatCard label="Patrols Completed" value={completedToday}
             color="#2e7d32" bg="#e8f5e9" icon={<CheckCircleIcon />} />
         </Grid>
-        <Grid item xs={6} sm={3}>
+        <Grid size={{ xs: 6, sm: 3 }}   >
           <StatCard label="Total Patrol Logs" value={totalPatrolToday}
-            color="#4527a0" bg="#ede7f6" icon={<SensorsIcon />} />
+            color="#0854ed" bg="#e9f1ff" icon={<SensorsIcon />} />
         </Grid>
       </Grid>
 
       <Grid container spacing={3}>
         {/* ── Recent Gate Access ── */}
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}   >
           <Card sx={{ borderRadius: 2, boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
             <CardContent>
               <SectionHeader icon={<MeetingRoomIcon />} title="Recent Gate Access" color="#1565c0" />
               <TableContainer>
                 <Table size="small">
-                  <TableHead sx={{ bgcolor: "#1a237e" }}>
+                  <TableHead sx={{ bgcolor: "#0854ed" }}>
                     <TableRow>
                       {["Name", "Unit", "Check-In", "Status"].map((h) => (
                         <TableCell key={h} sx={{ color: "white", fontWeight: "bold", py: 1 }}>{h}</TableCell>
@@ -144,13 +118,13 @@ const GuardDashboard = () => {
         </Grid>
 
         {/* ── Recent Patrol Logs ── */}
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}   >
           <Card sx={{ borderRadius: 2, boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
             <CardContent>
-              <SectionHeader icon={<RouteIcon />} title="Recent Patrol Logs" color="#4527a0" />
+              <SectionHeader icon={<RouteIcon />} title="Recent Patrol Logs" color="#0854ed" />
               <TableContainer>
                 <Table size="small">
-                  <TableHead sx={{ bgcolor: "#4527a0" }}>
+                  <TableHead sx={{ bgcolor: "#0854ed" }}>
                     <TableRow>
                       {["Guard", "Checkpoint", "Time", "Status"].map((h) => (
                         <TableCell key={h} sx={{ color: "white", fontWeight: "bold", py: 1 }}>{h}</TableCell>

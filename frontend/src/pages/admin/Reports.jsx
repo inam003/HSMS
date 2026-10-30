@@ -1,377 +1,132 @@
-import { useState, useEffect } from "react";
-import {
-  Box, Typography, Button, Card, CardContent, Grid, Table, TableBody,
-  TableCell, TableContainer, TableHead, TableRow, Paper, Alert,
-  CircularProgress, Chip, Divider, Tabs, Tab
-} from "@mui/material";
-import AssessmentIcon   from "@mui/icons-material/Assessment";
-import WarningIcon      from "@mui/icons-material/Warning";
-import TrendingUpIcon   from "@mui/icons-material/TrendingUp";
-import TrendingDownIcon from "@mui/icons-material/TrendingDown";
-import AccountBalanceIcon  from "@mui/icons-material/AccountBalance";
-import HourglassEmptyIcon  from "@mui/icons-material/HourglassEmpty";
+import Toast from "../../components/common/Toast";
+import { useEffect, useState } from "react";
+import { Button, CircularProgress } from "@mui/material";
+import AssessmentOutlined from "@mui/icons-material/AssessmentOutlined";
+import WarningAmberRounded from "@mui/icons-material/WarningAmberRounded";
+import SearchRounded from "@mui/icons-material/SearchRounded";
+import KeyboardArrowDownRounded from "@mui/icons-material/KeyboardArrowDownRounded";
+import ChevronLeftRounded from "@mui/icons-material/ChevronLeftRounded";
+import ChevronRightRounded from "@mui/icons-material/ChevronRightRounded";
+import AccessTimeRounded from "@mui/icons-material/AccessTimeRounded";
 import api from "../../api/axios";
+import "./Members.css";
+import "./Reports.css";
 
-/* ── small reusable summary card ── */
-const SummaryCard = ({ label, value, sub, color }) => (
-  <Card sx={{ borderLeft: `4px solid ${color}`, borderRadius: 2, height: "100%" }}>
-    <CardContent>
-      <Typography variant="subtitle2" color="text.secondary" mb={0.5}>{label}</Typography>
-      <Typography variant="h5" fontWeight="bold" color={color}>
-        PKR {(value ?? 0).toLocaleString()}
-      </Typography>
-      {sub && (
-        <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>{sub}</Typography>
-      )}
-    </CardContent>
-  </Card>
-);
-
-/* ── breakdown pill showing a sub-total ── */
-const SubPill = ({ label, amount, count, color }) => (
-  <Box sx={{
-    display: "inline-flex", flexDirection: "column", alignItems: "center",
-    bgcolor: `${color}12`, border: `1px solid ${color}30`,
-    borderRadius: 2, px: 4, py: 2, mr: 1.5, mb: 1.5, minWidth: 160,
-  }}>
-    <Typography variant="body2" color="text.secondary" fontWeight="bold" mb={0.5}>{label}</Typography>
-    <Typography variant="h6" fontWeight="bold" color={color}>PKR {(amount ?? 0).toLocaleString()}</Typography>
-    <Typography variant="caption" color="text.secondary" mt={0.5}>{count} record{count !== 1 ? "s" : ""}</Typography>
-  </Box>
-);
-
-const Reports = () => {
-  const [report, setReport]     = useState(null);
-  const [loading, setLoading]   = useState(false);
-  const [reportType, setReportType] = useState("");
-  const [error, setError]       = useState("");
-  const [tab, setTab]           = useState(0);
-
-  const fetchReport = async (type) => {
-    setLoading(true); setError(""); setReport(null); setReportType(type);
-    try {
-      const { data } = await api.get(`/expenses/reports/summary?type=${type}`);
-      setReport(data);
-    } catch (e) { setError(e.response?.data?.message || "Error fetching report"); }
-    setLoading(false);
-  };
-
-  useEffect(() => { fetchReport("income-expense"); }, []);
-
-  /* ── derived breakdowns (computed only when income-expense report is loaded) ── */
-  const incomeByType = (report?.paidBills ?? []).reduce((acc, b) => {
-    if (!acc[b.Bill_Type]) acc[b.Bill_Type] = { amount: 0, count: 0 };
-    acc[b.Bill_Type].amount += b.Amount;
-    acc[b.Bill_Type].count  += 1;
-    return acc;
-  }, {});
-
-  const expenseByCategory = (report?.expenses ?? []).reduce((acc, e) => {
-    if (!acc[e.ExpenseCategory]) acc[e.ExpenseCategory] = { amount: 0, count: 0 };
-    acc[e.ExpenseCategory].amount += e.Amount;
-    acc[e.ExpenseCategory].count  += 1;
-    return acc;
-  }, {});
-
-  /* total from expenses where PaymentStatus = "Paid" vs "Pending" */
-  const expPaid    = (report?.expenses ?? []).filter((e) => e.PaymentStatus === "Paid").reduce((s, e) => s + e.Amount, 0);
-  const expPending = (report?.expenses ?? []).filter((e) => e.PaymentStatus === "Pending").reduce((s, e) => s + e.Amount, 0);
-
-  return (
-    <Box>
-      <Typography variant="h5" fontWeight="bold" mb={3}>Financial Reports</Typography>
-
-      {/* ── Report buttons ── */}
-      <Box display="flex" gap={2} mb={3} flexWrap="wrap">
-        <Button
-          variant={reportType === "income-expense" ? "contained" : "outlined"}
-          startIcon={<AssessmentIcon />}
-          onClick={() => fetchReport("income-expense")}
-          sx={{ borderRadius: 2, ...(reportType === "income-expense" && { bgcolor: "#1a237e" }) }}>
-          Income vs Expense Report
-        </Button>
-        <Button
-          variant={reportType === "defaulters" ? "contained" : "outlined"}
-          color="error" startIcon={<WarningIcon />}
-          onClick={() => fetchReport("defaulters")}
-          sx={{ borderRadius: 2 }}>
-          Defaulter List
-        </Button>
-      </Box>
-
-      {loading && <Box display="flex" justifyContent="center" py={6}><CircularProgress /></Box>}
-      {error   && <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>}
-
-      {/* ════════════════ INCOME vs EXPENSE REPORT ════════════════ */}
-      {report && reportType === "income-expense" && (
-        <Box>
-
-          {/* ── 4 summary cards ── */}
-          <Grid container spacing={2} mb={3}>
-            <Grid item xs={12} sm={6} md={3}>
-              <SummaryCard
-                label="Total Income (Paid Bills)"
-                value={report.totalIncome}
-                sub={`${report.paidBills?.length ?? 0} paid bills — sum of all amounts`}
-                color="#2e7d32"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <SummaryCard
-                label="Total Expenses"
-                value={report.totalExpenses}
-                sub={`${report.expenses?.length ?? 0} expense records — all categories`}
-                color="#c62828"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <SummaryCard
-                label="Net Balance (Income − Expenses)"
-                value={report.balance}
-                sub={report.balance >= 0 ? "Surplus — income exceeds expenses" : "Deficit — expenses exceed income"}
-                color={report.balance >= 0 ? "#2e7d32" : "#c62828"}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <SummaryCard
-                label="Outstanding (Unpaid Bills)"
-                value={report.totalOutstanding}
-                sub={`${report.unpaidCount ?? 0} bills still unpaid — not counted in income`}
-                color="#f57f17"
-              />
-            </Grid>
-          </Grid>
-
-          {/* ── Income / Expense tabs ── */}
-          <Card sx={{ borderRadius: 2 }}>
-            <Tabs value={tab} onChange={(_, v) => setTab(v)}
-              sx={{ px: 2, borderBottom: "1px solid #e0e0e0" }}
-              TabIndicatorProps={{ style: { backgroundColor: tab === 0 ? "#2e7d32" : "#c62828" } }}>
-              <Tab
-                icon={<TrendingUpIcon />} iconPosition="start"
-                label={`Income (${report.paidBills?.length ?? 0} bills)`}
-                sx={{ fontWeight: "bold", color: tab === 0 ? "#2e7d32" : undefined, "&.Mui-selected": { color: "#2e7d32" } }}
-              />
-              <Tab
-                icon={<TrendingDownIcon />} iconPosition="start"
-                label={`Expenses (${report.expenses?.length ?? 0} records)`}
-                sx={{ fontWeight: "bold", color: tab === 1 ? "#c62828" : undefined, "&.Mui-selected": { color: "#c62828" } }}
-              />
-            </Tabs>
-
-            <CardContent>
-              {/* ── Income tab ── */}
-              {tab === 0 && (
-                <Box>
-                  <Typography variant="subtitle2" fontWeight="bold" mb={1}>Breakdown by Bill Type</Typography>
-                  <Box mb={2}>
-                    {Object.entries(incomeByType).length ? (
-                      Object.entries(incomeByType).map(([type, { amount, count }]) => (
-                        <SubPill key={type} label={type} amount={amount} count={count} color="#2e7d32" />
-                      ))
-                    ) : (
-                      <Typography variant="body2" color="text.secondary">No paid bills yet.</Typography>
-                    )}
-                  </Box>
-
-                  <Divider sx={{ mb: 2 }} />
-
-                  <Typography variant="subtitle2" fontWeight="bold" mb={1}>
-                    All Paid Bills ({report.paidBills?.length ?? 0} records)
-                  </Typography>
-                  <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
-                    <Table size="small">
-                      <TableHead sx={{ bgcolor: "#e8f5e9" }}>
-                        <TableRow>
-                          {["#", "Unit No.", "Resident", "Bill Type", "Due Date", "Amount"].map((h) => (
-                            <TableCell key={h} sx={{ fontWeight: "bold", color: "#2e7d32" }}>{h}</TableCell>
-                          ))}
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {report.paidBills?.map((b, i) => (
-                          <TableRow key={b._id} hover>
-                            <TableCell sx={{ color: "#aaa" }}>{i + 1}</TableCell>
-                            <TableCell>{b.unit?.Unit_Number || "—"}</TableCell>
-                            <TableCell>{b.unit?.resident?.Name || "—"}</TableCell>
-                            <TableCell><Chip label={b.Bill_Type} size="small" /></TableCell>
-                            <TableCell>{b.Due_Date ? new Date(b.Due_Date).toLocaleDateString() : "—"}</TableCell>
-                            <TableCell sx={{ fontWeight: "bold", color: "#2e7d32" }}>
-                              PKR {b.Amount?.toLocaleString()}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                        {!report.paidBills?.length && (
-                          <TableRow>
-                            <TableCell colSpan={6} align="center" sx={{ py: 4, color: "#aaa" }}>No paid bills found</TableCell>
-                          </TableRow>
-                        )}
-                        {report.paidBills?.length > 0 && (
-                          <TableRow sx={{ bgcolor: "#e8f5e9" }}>
-                            <TableCell colSpan={5} sx={{ fontWeight: "bold", textAlign: "right" }}>Total Income</TableCell>
-                            <TableCell sx={{ fontWeight: "bold", color: "#2e7d32" }}>
-                              PKR {(report.totalIncome ?? 0).toLocaleString()}
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                </Box>
-              )}
-
-              {/* ── Expenses tab ── */}
-              {tab === 1 && (
-                <Box>
-                  <Typography variant="subtitle2" fontWeight="bold" mb={1}>Breakdown by Category</Typography>
-                  <Box mb={2}>
-                    {Object.entries(expenseByCategory).length ? (
-                      Object.entries(expenseByCategory).map(([cat, { amount, count }]) => (
-                        <SubPill key={cat} label={cat} amount={amount} count={count} color="#c62828" />
-                      ))
-                    ) : (
-                      <Typography variant="body2" color="text.secondary">No expenses recorded yet.</Typography>
-                    )}
-                  </Box>
-
-                  <Divider sx={{ mb: 2 }} />
-
-                  <Typography variant="subtitle2" fontWeight="bold" mb={1}>
-                    All Expense Records ({report.expenses?.length ?? 0} records)
-                  </Typography>
-                  <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
-                    <Table size="small">
-                      <TableHead sx={{ bgcolor: "#ffebee" }}>
-                        <TableRow>
-                          {["#", "Date", "Category", "Description", "Payment Status", "Amount"].map((h) => (
-                            <TableCell key={h} sx={{ fontWeight: "bold", color: "#c62828" }}>{h}</TableCell>
-                          ))}
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {report.expenses?.map((e, i) => (
-                          <TableRow key={e._id} hover>
-                            <TableCell sx={{ color: "#aaa" }}>{i + 1}</TableCell>
-                            <TableCell>{e.ExpenseDate ? new Date(e.ExpenseDate).toLocaleDateString() : "—"}</TableCell>
-                            <TableCell><Chip label={e.ExpenseCategory} size="small" /></TableCell>
-                            <TableCell>{e.Description || "—"}</TableCell>
-                            <TableCell>
-                              <Chip label={e.PaymentStatus} size="small"
-                                color={e.PaymentStatus === "Paid" ? "success" : "warning"} />
-                            </TableCell>
-                            <TableCell sx={{ fontWeight: "bold", color: "#c62828" }}>
-                              PKR {e.Amount?.toLocaleString()}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                        {!report.expenses?.length && (
-                          <TableRow>
-                            <TableCell colSpan={6} align="center" sx={{ py: 4, color: "#aaa" }}>No expense records found</TableCell>
-                          </TableRow>
-                        )}
-                        {report.expenses?.length > 0 && (
-                          <TableRow sx={{ bgcolor: "#ffebee" }}>
-                            <TableCell colSpan={5} sx={{ fontWeight: "bold", textAlign: "right" }}>Total Expenses</TableCell>
-                            <TableCell sx={{ fontWeight: "bold", color: "#c62828" }}>
-                              PKR {(report.totalExpenses ?? 0).toLocaleString()}
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-
-                  {/* net balance footer */}
-                  <Box sx={{
-                    mt: 2, p: 2, borderRadius: 2,
-                    bgcolor: report.balance >= 0 ? "#e8f5e9" : "#ffebee",
-                    border: `1px solid ${report.balance >= 0 ? "#a5d6a7" : "#ef9a9a"}`,
-                    display: "flex", justifyContent: "space-between", alignItems: "center",
-                  }}>
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <AccountBalanceIcon sx={{ color: report.balance >= 0 ? "#2e7d32" : "#c62828" }} />
-                      <Typography fontWeight="bold" color={report.balance >= 0 ? "#2e7d32" : "#c62828"}>
-                        Net Balance = PKR {(report.totalIncome ?? 0).toLocaleString()} − PKR {(report.totalExpenses ?? 0).toLocaleString()}
-                      </Typography>
-                    </Box>
-                    <Typography variant="h6" fontWeight="bold" color={report.balance >= 0 ? "#2e7d32" : "#c62828"}>
-                      PKR {(report.balance ?? 0).toLocaleString()}
-                    </Typography>
-                  </Box>
-                </Box>
-              )}
-            </CardContent>
-          </Card>
-        </Box>
-      )}
-
-      {/* ════════════════ DEFAULTER LIST ════════════════ */}
-      {report && reportType === "defaulters" && (
-        <Box>
-          {/* summary bar */}
-          {report.length > 0 && (
-            <Box sx={{ p: 2, mb: 2, borderRadius: 2, bgcolor: "#fff3e0", border: "1px solid #ffcc80",
-              display: "flex", gap: 3, flexWrap: "wrap" }}>
-              <Box display="flex" alignItems="center" gap={1}>
-                <HourglassEmptyIcon sx={{ color: "#f57f17" }} />
-                <Typography fontWeight="bold" color="#f57f17">
-                  {report.length} unpaid bill{report.length !== 1 ? "s" : ""}
-                </Typography>
-              </Box>
-              <Typography fontWeight="bold" color="#c62828">
-                Total Outstanding: PKR {report.reduce((s, b) => s + b.Amount, 0).toLocaleString()}
-              </Typography>
-              <Typography fontWeight="bold" color="#c62828">
-                Overdue: {report.filter((b) => new Date(b.Due_Date) < new Date()).length} bill(s)
-              </Typography>
-            </Box>
-          )}
-
-          <Typography variant="h6" mb={1} color="error">Defaulters — All Unpaid Bills</Typography>
-          <Typography variant="body2" color="text.secondary" mb={2}>
-            Bills marked <strong>Overdue</strong> have passed their due date.
-          </Typography>
-          <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
-            <Table>
-              <TableHead sx={{ bgcolor: "#c62828" }}>
-                <TableRow>
-                  {["Unit No.", "Resident", "Contact", "Amount", "Due Date", "Type", "Status"].map((h) => (
-                    <TableCell key={h} sx={{ color: "white", fontWeight: "bold" }}>{h}</TableCell>
-                  ))}
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {report.map((b) => {
-                  const isOverdue = b.Due_Date && new Date(b.Due_Date) < new Date();
-                  return (
-                    <TableRow key={b._id} sx={{ bgcolor: isOverdue ? "#fff8f8" : "inherit" }}>
-                      <TableCell>{b.unit?.Unit_Number || "—"}</TableCell>
-                      <TableCell>{b.unit?.resident?.Name || "—"}</TableCell>
-                      <TableCell>{b.unit?.resident?.Contact_No || "—"}</TableCell>
-                      <TableCell><strong>PKR {b.Amount?.toLocaleString()}</strong></TableCell>
-                      <TableCell>{b.Due_Date ? new Date(b.Due_Date).toLocaleDateString() : "—"}</TableCell>
-                      <TableCell><Chip label={b.Bill_Type} size="small" /></TableCell>
-                      <TableCell>
-                        <Chip label={isOverdue ? "Overdue ⚠️" : "Pending"} size="small"
-                          color={isOverdue ? "error" : "warning"} />
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-                {!report.length && (
-                  <TableRow>
-                    <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
-                      No unpaid bills found 🎉
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Box>
-      )}
-    </Box>
-  );
+const amount = value => Number(value || 0).toLocaleString("en-PK", { maximumFractionDigits: 2 });
+const money = value => `PKR ${amount(value)}`;
+const sum = rows => rows.reduce((total, row) => total + (Number(row.Amount) || 0), 0);
+const dateLabel = value => {
+  const date = new Date(value);
+  return value && !Number.isNaN(date.getTime()) ? date.toLocaleDateString("en-GB", { timeZone: "UTC" }) : "—";
 };
+const breakdown = (rows, field) => rows.reduce((groups, row) => {
+  const label = row[field] || "Other";
+  const group = groups.get(label) || { amount: 0, count: 0 };
+  group.amount += Number(row.Amount) || 0;
+  group.count += 1;
+  groups.set(label, group);
+  return groups;
+}, new Map());
+
+function Reports() {
+  const [report, setReport] = useState(null);
+  const [unpaid, setUnpaid] = useState([]);
+  const [view, setView] = useState("income-expense");
+  const [tab, setTab] = useState("income");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [revision, setRevision] = useState(0);
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("");
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      try {
+        const [summary, defaulters] = await Promise.all([
+          api.get("/expenses/reports/summary?type=income-expense"),
+          api.get("/expenses/reports/summary?type=defaulters"),
+        ]);
+        if (active) { setReport(summary.data); setUnpaid(defaulters.data); }
+      } catch (e) {
+        if (active) setError(e.response?.data?.message || "Unable to load financial reports. Please try again.");
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+    load();
+    return () => { active = false; };
+  }, [revision]);
+
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const overdue = bill => Boolean(bill.Due_Date && bill.Due_Date.slice(0, 10) < today);
+  const overdueCount = unpaid.filter(overdue).length;
+  const query = search.trim().toLowerCase();
+  const filtered = unpaid.filter(bill =>
+    (String(bill.unit?.Unit_Number ?? "").toLowerCase().includes(query) || (bill.unit?.resident?.Name || "").toLowerCase().includes(query)) &&
+    (!status || (status === "overdue" ? overdue(bill) : !overdue(bill)))
+  );
+  const currentPage = Math.min(page, Math.max(1, Math.ceil(filtered.length / pageSize)));
+  const visible = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const income = report?.paidBills ?? [];
+  const expenses = report?.expenses ?? [];
+  const isIncome = tab === "income";
+  const records = isIncome ? income : expenses;
+  const groups = breakdown(records, isIncome ? "Bill_Type" : "ExpenseCategory");
+  const balance = Number(report?.balance || 0);
+  const expPaid = sum(expenses.filter(expense => expense.PaymentStatus === "Paid"));
+  const expPending = sum(expenses.filter(expense => expense.PaymentStatus === "Pending"));
+
+  return <div className="hs-reports">
+    <div className="hs-page-heading hs-members-heading hs-reports-heading"><div><h1>Financial Reports</h1><p>Review income, expenses, and outstanding dues.</p></div></div>
+    <div className="hs-report-switch" role="group" aria-label="Select financial report">
+      <button className={view === "income-expense" ? "active" : ""} aria-pressed={view === "income-expense"} onClick={() => setView("income-expense")}><AssessmentOutlined/>Income vs expenses</button>
+      <button className={view === "defaulters" ? "active" : ""} aria-pressed={view === "defaulters"} onClick={() => setView("defaulters")}><WarningAmberRounded/>Defaulter list <span>{loading || error ? "—" : unpaid.length}</span></button>
+    </div>
+    {error && <Toast severity="error" sx={{ mb: 2 }} action={<Button color="inherit" onClick={() => { setError(""); setLoading(true); setRevision(value => value + 1); }}>Retry</Button>}>{error}</Toast>}
+    {loading && <div className="hs-loading" role="status"><CircularProgress size={28}/>Loading financial reports...</div>}
+    {!loading && !error && report && (view === "income-expense" ? <>
+      <div className="hs-report-cards">
+        {[
+          { label: "Total income", value: report.totalIncome, sub: `${income.length} paid bills` },
+          { label: "Total expenses", value: report.totalExpenses, sub: `${expenses.length} expense records` },
+          { label: "Net balance (Income − Expenses)", value: balance, sub: balance < 0 ? "Expenses exceed income" : balance > 0 ? "Income exceeds expenses" : "Income equals expenses", color: balance < 0 ? "negative" : "positive" },
+          { label: "Outstanding dues", value: report.totalOutstanding, sub: `${report.unpaidCount ?? unpaid.length} unpaid bills`, color: "outstanding" },
+        ].map(card => <section className={`hs-panel hs-report-card ${card.color || ""}`} key={card.label}><h2>{card.label}</h2><strong>{money(card.value)}</strong><p>{card.sub}</p></section>)}
+      </div>
+      <section className="hs-panel hs-report-detail" aria-label="Income and expense details">
+        <div className="hs-report-tabs" role="group" aria-label="Select income or expenses">
+          {[["income", "Income", income.length], ["expenses", "Expenses", expenses.length]].map(([value, label, count]) => <button key={value} className={tab === value ? "active" : ""} aria-pressed={tab === value} onClick={() => setTab(value)}>{label}<span>{count}</span></button>)}
+        </div>
+        <div className="hs-report-breakdown"><h2>{isIncome ? "Breakdown by bill type" : "Breakdown by category"}</h2><div className="hs-report-breakdown-grid">
+          {[...groups].map(([label, group]) => <div key={label}><h3>{label}</h3><strong>{money(group.amount)}</strong><p>{group.count} {group.count === 1 ? "record" : "records"}</p></div>)}
+          {!groups.size && <p className="hs-report-muted">{isIncome ? "No paid bills yet." : "No expenses recorded yet."}</p>}
+        </div></div>
+        <h2 className="hs-report-table-title">{isIncome ? "Paid bills" : "Expense records"} ({records.length} records)</h2>
+        <div className="hs-report-table-wrap"><table className="hs-report-table"><thead><tr>{(isIncome ? ["#", "Unit no.", "Resident", "Bill type", "Due date", "Amount (PKR)"] : ["#", "Date", "Category", "Description", "Payment status", "Amount (PKR)"]).map(label => <th scope="col" key={label}>{label}</th>)}</tr></thead>
+          <tbody>{records.map((record, index) => <tr key={record._id}><td>{index + 1}</td>{isIncome ? <><td>{record.unit?.Unit_Number ?? "—"}</td><td>{record.unit?.resident?.Name || "—"}</td><td><span className="hs-report-type">{record.Bill_Type}</span></td><td>{dateLabel(record.Due_Date)}</td></> : <><td>{dateLabel(record.ExpenseDate)}</td><td><span className="hs-report-type">{record.ExpenseCategory}</span></td><td className="hs-report-description">{record.Description || "—"}</td><td><span className={`hs-report-status ${record.PaymentStatus === "Paid" ? "paid" : "pending"}`}><i/>{record.PaymentStatus}</span></td></>}<td>{money(record.Amount)}</td></tr>)}
+            {!records.length && <tr><td colSpan={6} className="hs-empty">{isIncome ? "No paid bills found." : "No expense records found."}</td></tr>}
+          </tbody><tfoot><tr><th colSpan={5} scope="row">{isIncome ? "Total income" : "Total expenses"}</th><td>{money(isIncome ? report.totalIncome : report.totalExpenses)}</td></tr></tfoot>
+        </table></div>
+        {!isIncome && <div className="hs-report-expense-footer"><p>Paid: <strong>{money(expPaid)}</strong><span>Pending: <strong>{money(expPending)}</strong></span></p><div className={balance < 0 ? "negative" : "positive"}><span>Net balance = {money(report.totalIncome)} − {money(report.totalExpenses)}</span><strong>{money(balance)}</strong></div></div>}
+      </section>
+      <p className="hs-report-footnote">{isIncome ? "Income includes paid bills only." : "Expenses include both paid and pending records."}</p>
+    </> : <>
+      <section className="hs-panel hs-defaulter-summary" aria-label="Unpaid bill summary"><div><h2>Outstanding dues</h2><strong>{money(sum(unpaid))}</strong></div><div><h2>Unpaid bills</h2><strong>{unpaid.length}</strong></div><div className="negative"><h2>Overdue bills</h2><strong>{overdueCount}</strong></div></section>
+      {overdueCount > 0 && <div className="hs-report-warning" role="status"><WarningAmberRounded/>{overdueCount} {overdueCount === 1 ? "bill has" : "bills have"} passed {overdueCount === 1 ? "its" : "their"} due date.</div>}
+      <section className="hs-panel hs-defaulter-detail" aria-label="Defaulter list">
+        <div className="hs-defaulter-heading"><div><h2>Defaulter list <span>{unpaid.length}</span></h2><p>All unpaid bills and overdue balances.</p></div><div className="hs-defaulter-filters"><label className="hs-resident-search"><SearchRounded/><input type="search" placeholder="Search unit or resident..." aria-label="Search defaulters by unit or resident" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}/></label><div className="hs-resident-filter"><select aria-label="Filter unpaid bills by status" value={status} onChange={e => { setStatus(e.target.value); setPage(1); }}><option value="">All statuses</option><option value="overdue">Overdue</option><option value="pending">Pending</option></select><KeyboardArrowDownRounded/></div></div></div>
+        <div className="hs-report-table-wrap"><table className="hs-report-table hs-defaulter-table"><thead><tr>{["Unit no.", "Resident", "Contact", "Amount (PKR)", "Due date", "Type", "Status"].map(label => <th scope="col" key={label}>{label}</th>)}</tr></thead><tbody>
+          {visible.map(bill => <tr key={bill._id}><td>{bill.unit?.Unit_Number ?? "—"}</td><td>{bill.unit?.resident?.Name || "—"}</td><td>{bill.unit?.resident?.Contact_No || "—"}</td><td><strong>{amount(bill.Amount)}</strong></td><td>{dateLabel(bill.Due_Date)}</td><td><span className="hs-report-type">{bill.Bill_Type}</span></td><td><span className={`hs-report-status ${overdue(bill) ? "overdue" : "pending"}`}><AccessTimeRounded/>{overdue(bill) ? "Overdue" : "Pending"}</span></td></tr>)}
+          {!visible.length && <tr><td colSpan={7} className="hs-empty">{unpaid.length ? "No unpaid bills match your search or filter." : "No unpaid bills found."}</td></tr>}
+        </tbody><tfoot><tr><th colSpan={3} scope="row">{search.trim() || status ? "Filtered outstanding" : "Total outstanding"}</th><td>{money(sum(filtered))}</td><td colSpan={3}/></tr></tfoot></table></div>
+        <div className="hs-residents-pagination"><span aria-live="polite">Showing {filtered.length ? (currentPage - 1) * pageSize + 1 : 0}–{Math.min(currentPage * pageSize, filtered.length)} of {filtered.length} unpaid bills.</span><div><button disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)}><ChevronLeftRounded/>Previous</button><button disabled={currentPage * pageSize >= filtered.length} onClick={() => setPage(currentPage + 1)}>Next<ChevronRightRounded/></button></div></div>
+      </section>
+    </>)}
+  </div>;
+}
 
 export default Reports;

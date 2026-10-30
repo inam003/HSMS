@@ -1,0 +1,43 @@
+.hs-admin-dialog .MuiBackdrop-root{background:rgba(17,28,53,.5)}
+.hs-admin-dialog .hs-admin-dialog-paper{font-family:Arial,"Segoe UI",sans-serif;color:#10183f;border:1px solid #dbe4f1;border-radius:10px;background:white;box-shadow:0 24px 80px #10183f30;max-height:calc(100dvh - 48px)}
+.hs-admin-dialog-header{display:flex;align-items:center;gap:16px;position:relative;padding:23px 58px 22px 26px;border-bottom:1px solid #dfe7f2;flex-shrink:0;min-height:100px}
+.hs-admin-dialog-icon{display:grid;place-items:center;width:52px;height:54px;border-radius:9px;background:#e7f0ff;color:#0854ed;flex-shrink:0}
+.hs-admin-dialog-icon svg{font-size:29px}
+.hs-admin-dialog-header>div{min-width:0}
+.hs-admin-dialog-header h2{font-size:23px;line-height:1.3;letter-spacing:-.45px;font-weight:700;color:#10185b;margin:0 0 4px;overflow-wrap:anywhere}
+.hs-admin-dialog-header p{font-size:14px;line-height:1.5;color:#63749a;margin:0}
+.hs-admin-dialog-close{position:absolute;right:17px;top:20px;display:grid;place-items:center;width:32px;height:32px;border:0;border-radius:5px;background:transparent;color:#657594;cursor:pointer}
+.hs-admin-dialog-close svg{font-size:23px}
+.hs-admin-dialog-close:hover{background:#eef3fb;color:#153675}
+.hs-admin-dialog-close:disabled{opacity:.4;cursor:wait}
+.hs-admin-dialog button:focus-visible{outline:2px solid #0854ed;outline-offset:3px}
+.hs-admin-dialog .MuiDialogContent-root{padding:26px 26px 18px;scrollbar-width:thin;scrollbar-color:#cbd5e6 transparent}
+.hs-admin-dialog .MuiDialogContent-root .MuiTypography-root{font-family:inherit;color:#465a83}
+.hs-admin-dialog .MuiInputBase-root{font-family:inherit;color:#203662;border-radius:6px;background:#fff;font-size:15px}
+.hs-admin-dialog .MuiOutlinedInput-notchedOutline{border-color:#cdd8e9}
+.hs-admin-dialog .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline{border-color:#8ea9d5}
+.hs-admin-dialog .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline{border-color:#0854ed}
+.hs-admin-dialog .MuiOutlinedInput-root.Mui-error .MuiOutlinedInput-notchedOutline{border-color:#dc2638}
+.hs-admin-dialog .MuiInputLabel-root{font-family:inherit;color:#64769a;font-size:15px}
+.hs-admin-dialog .MuiInputLabel-root.Mui-focused{color:#0854ed}
+.hs-admin-dialog .MuiInputLabel-root.Mui-error,.hs-admin-dialog .MuiFormHelperText-root.Mui-error{color:#dc2638}
+.hs-admin-dialog .MuiFormHelperText-root{font-family:inherit;color:#7887a3;margin-left:2px}
+.hs-admin-dialog .MuiDivider-root{border-color:#e1e8f2;margin:0}
+.hs-admin-dialog .MuiDialogActions-root{flex-shrink:0;padding:17px 26px;gap:11px;background:#f8faff;justify-content:flex-end}
+.hs-admin-dialog .MuiDialogActions-root>.MuiButton-root{margin:0;border-radius:6px;min-height:43px;padding:9px 19px;min-width:104px;font-family:inherit;font-weight:500;font-size:14px;line-height:1.5;text-transform:none;box-shadow:none}
+.hs-admin-dialog .MuiDialogActions-root>.MuiButton-root:not(.MuiButton-contained){border:1px solid #cbd6e8;color:#40567f;background:white}
+.hs-admin-dialog .MuiDialogActions-root>.MuiButton-root:not(.MuiButton-contained):hover{background:#edf3fc;border-color:#9fb5da}
+.hs-admin-dialog .MuiDialogActions-root>.MuiButton-contained{background:#0854ed;color:white}
+.hs-admin-dialog .MuiDialogActions-root>.MuiButton-contained:hover{background:#0345c7;box-shadow:none}
+.hs-admin-dialog .MuiDialogActions-root>.MuiButton-contained.Mui-disabled{background:#cbdafa;color:#fff}
+.hs-admin-dialog .MuiDialogActions-root>.MuiButton-root:not(.MuiButton-contained).Mui-disabled{color:#a5b1c6;border-color:#e0e6f0}
+.hs-admin-dialog-danger .hs-admin-dialog-icon{background:#fff0f1;color:#dc2638}
+.hs-admin-delete-description{font-size:15px;line-height:1.6;color:#5b6d90;margin:0 0 13px}
+.hs-admin-delete-record{border:1px solid #dce5f2;background:#f5f8fc;border-radius:7px;padding:13px 15px;color:#162d65;font-size:16px;font-weight:600;overflow-wrap:anywhere;margin-bottom:18px}
+.hs-admin-delete-warning{display:flex;align-items:flex-start;gap:10px;background:#fff4f4;border:1px solid #f8d4d8;border-radius:7px;padding:12px;color:#c62b3e}
+.hs-admin-delete-warning svg{font-size:21px;flex-shrink:0;margin-top:1px}
+.hs-admin-delete-warning p{font-size:13px;line-height:1.6;margin:0}
+.hs-admin-dialog-danger .MuiDialogActions-root>.MuiButton-contained{background:#dc2638}
+.hs-admin-dialog-danger .MuiDialogActions-root>.MuiButton-contained:hover{background:#bb182a}
+.hs-admin-dialog-danger .MuiDialogActions-root>.MuiButton-contained.Mui-disabled{background:#f3c9ce}
+@media(max-width:600px){.hs-admin-dialog .hs-admin-dialog-paper{margin:16px;width:calc(100% - 32px);max-height:calc(100dvh - 32px)}.hs-admin-dialog-header{padding:20px 47px 19px 20px;gap:13px;min-height:92px}.hs-admin-dialog-icon{width:44px;height:47px}.hs-admin-dialog-icon svg{font-size:25px}.hs-admin-dialog-header h2{font-size:21px}.hs-admin-dialog-header p{font-size:13px}.hs-admin-dialog-close{right:11px;top:16px}.hs-admin-dialog .MuiDialogContent-root{padding:23px 20px 15px}.hs-admin-dialog .MuiDialogActions-root{padding:15px 20px;gap:10px;flex-wrap:wrap}.hs-admin-dialog .MuiDialogActions-root>.MuiButton-root{padding-inline:15px;min-width:95px}}

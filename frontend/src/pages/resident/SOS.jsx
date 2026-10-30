@@ -1,7 +1,8 @@
+import Toast from "../../components/common/Toast";
+import AdminDialog, { AdminDialogHeader as ModalHeader } from "../../components/common/AdminDialog";
 import { useState } from "react";
 import {
-  Box, Typography, Button, Card, CardContent, Alert, CircularProgress, Dialog,
-  DialogContent, DialogActions, TextField, Divider
+  Box, Typography, Button, Card, CardContent, Alert, CircularProgress, DialogContent, DialogActions, TextField, Divider
 } from "@mui/material";
 import SosIcon from "@mui/icons-material/Sos";
 import WarningIcon from "@mui/icons-material/Warning";
@@ -26,7 +27,7 @@ const SOS = () => {
   };
 
   return (
-    <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" minHeight="60vh">
+    <Box className="hs-portal-page hs-portal-resident-SOS" display="flex" flexDirection="column" alignItems="center" justifyContent="center" minHeight="60vh">
       <Card sx={{ maxWidth: 500, width: "100%", borderRadius: 3, boxShadow: 3, textAlign: "center" }}>
         <CardContent sx={{ p: 5 }}>
           <WarningIcon sx={{ fontSize: 80, color: "#c62828", mb: 2 }} />
@@ -41,7 +42,7 @@ const SOS = () => {
             </Alert>
           ) : (
             <>
-              {error && <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>}
+              {error && <Toast severity="error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Toast>}
               <Button
                 variant="contained"
                 size="large"
@@ -76,16 +77,8 @@ const SOS = () => {
       </Card>
 
       {/* ── SOS Confirmation Dialog ── */}
-      <Dialog open={open} onClose={() => !loading && setOpen(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
-        <Box sx={{ bgcolor: "#c62828", px: 3, py: 2.5, borderRadius: "12px 12px 0 0" }}>
-          <Box display="flex" alignItems="center" gap={1.5}>
-            <WarningIcon sx={{ color: "rgba(255,255,255,0.85)" }} />
-            <Box>
-              <Typography variant="h6" fontWeight="bold" color="white">Confirm SOS Alert</Typography>
-              <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.7)" }}>This will alert all security personnel immediately</Typography>
-            </Box>
-          </Box>
-        </Box>
+      <AdminDialog danger open={open} onClose={() => !loading && setOpen(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+        <ModalHeader icon={<WarningIcon/>} title="Confirm SOS Alert" subtitle="This will alert all security personnel immediately"/>
         <DialogContent sx={{ pt: 3, pb: 1, px: 3 }}>
           <Typography variant="body2" color="text.secondary" mb={2}>
             Are you sure? This will immediately alert all security personnel.
@@ -103,7 +96,7 @@ const SOS = () => {
             {loading ? <CircularProgress size={18} color="inherit" /> : "YES, SEND SOS"}
           </Button>
         </DialogActions>
-      </Dialog>
+      </AdminDialog>
     </Box>
   );
 };

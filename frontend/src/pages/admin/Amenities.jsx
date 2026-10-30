@@ -1,28 +1,38 @@
+import AdminDialog, { AdminDialogHeader as ModalHeader, AdminDeleteDialog } from "../../components/common/AdminDialog";
+import Toast from "../../components/common/Toast";
 import { useEffect, useState } from "react";
 import {
-  Box, Typography, Button, Grid, Card, CardContent, CardActions, Table, TableBody,
-  TableCell, TableContainer, TableHead, TableRow, Paper, Dialog, DialogContent,
-  DialogActions, TextField, Alert, Chip, Tabs, Tab, IconButton, Tooltip,
-  Divider, Avatar, CircularProgress
+  Box, Typography, Button, DialogContent,
+  DialogActions, TextField, Divider, CircularProgress
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
+import EditOutlined from "@mui/icons-material/EditOutlined";
+import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
 import SpaIcon from "@mui/icons-material/Spa";
-import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import SearchRounded from "@mui/icons-material/SearchRounded";
+import KeyboardArrowDownRounded from "@mui/icons-material/KeyboardArrowDownRounded";
+import ChevronLeftRounded from "@mui/icons-material/ChevronLeftRounded";
+import ChevronRightRounded from "@mui/icons-material/ChevronRightRounded";
+import ArrowForwardRounded from "@mui/icons-material/ArrowForwardRounded";
+import PoolOutlined from "@mui/icons-material/PoolOutlined";
+import ApartmentOutlined from "@mui/icons-material/ApartmentOutlined";
+import CalendarMonthOutlined from "@mui/icons-material/CalendarMonthOutlined";
+import PeopleOutlineRounded from "@mui/icons-material/PeopleOutlineRounded";
+import TollOutlined from "@mui/icons-material/TollOutlined";
+import CheckRounded from "@mui/icons-material/CheckRounded";
+import CloseRounded from "@mui/icons-material/CloseRounded";
 import api from "../../api/axios";
+import "./Members.css";
+import "./Amenities.css";
 
-const ModalHeader = ({ icon, title, subtitle, color = "#1a237e" }) => (
-  <Box sx={{ bgcolor: color, px: 3, py: 2.5, borderRadius: "12px 12px 0 0" }}>
-    <Box display="flex" alignItems="center" gap={1.5}>
-      <Box sx={{ color: "rgba(255,255,255,0.85)", display: "flex" }}>{icon}</Box>
-      <Box>
-        <Typography variant="h6" fontWeight="bold" color="white">{title}</Typography>
-        {subtitle && <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.7)" }}>{subtitle}</Typography>}
-      </Box>
-    </Box>
-  </Box>
-);
+const money = value => `PKR ${Number(value || 0).toLocaleString("en-PK", { maximumFractionDigits: 2 })}`;
+const dateLabel = value => {
+  const date = new Date(value);
+  return value && !Number.isNaN(date.getTime()) ? date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }) : "—";
+};
+const AmenityIcon = ({ name }) => /pool|swim/i.test(name) ? <PoolOutlined/> : /hall|community|club/i.test(name) ? <ApartmentOutlined/> : /event|eid|meeting/i.test(name) ? <CalendarMonthOutlined/> : <SpaIcon/>;
+const bookingStatusClass = value => ({ Pending: "pending", Confirmed: "confirmed", Cancelled: "cancelled" })[value] || "pending";
+
 
 const validate = (form) => ({
   Name:        !form.Name.trim()                   ? "Amenity name is required"          : "",
@@ -36,6 +46,22 @@ const Amenities = () => {
   const [tab, setTab]                   = useState(0);
   const [amenities, setAmenities]       = useState([]);
   const [bookings, setBookings]         = useState([]);
+  const [amenitySearch, setAmenitySearch] = useState("");
+  const [bookingSearch, setBookingSearch] = useState("");
+  const [bookingStatus, setBookingStatus] = useState("");
+  const [page, setPage] = useState(1);
+  const [loadError, setLoadError] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const [actionError, setActionError] = useState("");
+  const [updatingId, setUpdatingId] = useState(null);
+  const pageSize = 10;
+  const pendingCount = bookings.filter(booking => booking.Status === "Pending").length;
+  const amenityQuery = amenitySearch.trim().toLowerCase();
+  const visibleAmenities = amenities.filter(amenity => [amenity.Name, amenity.Description].some(value => (value || "").toLowerCase().includes(amenityQuery)));
+  const bookingQuery = bookingSearch.trim().toLowerCase();
+  const filteredBookings = bookings.filter(booking => (!bookingStatus || booking.Status === bookingStatus) && [booking.amenity?.Name, booking.resident?.Name, booking.Time_Slot].some(value => (value || "").toLowerCase().includes(bookingQuery)));
+  const currentPage = Math.min(page, Math.max(1, Math.ceil(filteredBookings.length / pageSize)));
+  const visibleBookings = filteredBookings.slice((currentPage - 1) * pageSize, currentPage * pageSize);
   const [open, setOpen]                 = useState(false);
   const [editId, setEditId]             = useState(null);
   const [form, setForm]                 = useState({ Name: "", Capacity: "", Booking_Fee: "", Description: "" });
@@ -49,9 +75,11 @@ const Amenities = () => {
 
   const load = async () => {
     try {
+      setLoadError("");
       const [a, b] = await Promise.all([api.get("/amenities"), api.get("/amenities/bookings")]);
       setAmenities(a.data); setBookings(b.data);
-    } finally { setLoading(false); }
+    } catch (e) { setLoadError(e.response?.data?.message || "Unable to load amenities and bookings. Please try again."); }
+    finally { setLoading(false); }
   };
   useEffect(() => { load(); }, []);
 
@@ -74,7 +102,7 @@ const Amenities = () => {
 
   const handleSave = async () => {
     setTouched({ Name: true, Capacity: true, Booking_Fee: true });
-    if (!isValid) return;
+    if (!isValid || saving) return;
     setSaving(true); setSubmitError("");
     try {
       if (editId) await api.put(`/amenities/${editId}`, form);
@@ -85,133 +113,63 @@ const Amenities = () => {
   };
 
   const handleDelete = async () => {
-    if (!deleteTarget) return;
-    setDeleting(true);
+    if (!deleteTarget || deleting) return;
+    setDeleting(true); setDeleteError("");
     try {
       await api.delete(`/amenities/${deleteTarget.id}`);
-      setSuccess("Amenity deleted."); load();
-    } catch { /* ignore */ }
-    finally { setDeleting(false); setDeleteTarget(null); }
+      setSuccess("Amenity deleted."); setDeleteTarget(null); load();
+    } catch (e) { setDeleteError(e.response?.data?.message || "Unable to delete this amenity. Please try again."); }
+    finally { setDeleting(false); }
   };
 
   const handleBookingAction = async (id, status) => {
-    await api.put(`/amenities/bookings/${id}`, { Status: status }); load();
+    if (updatingId) return;
+    setUpdatingId(id); setActionError("");
+    try {
+      await api.put(`/amenities/bookings/${id}`, { Status: status });
+      setSuccess(status === "Confirmed" ? "Booking approved." : "Booking rejected.");
+      await load();
+    } catch (e) { setActionError(e.response?.data?.message || "Unable to update this booking. Please try again."); }
+    finally { setUpdatingId(null); }
   };
 
-  if (loading) return (
-    <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-      <CircularProgress sx={{ color: "#1a237e" }} />
-    </Box>
-  );
-
   return (
-    <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h5" fontWeight="bold">Amenity Management</Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpen()}
-          sx={{ bgcolor: "#1a237e", borderRadius: 2 }}>Add Amenity</Button>
-      </Box>
-      {success && <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSuccess("")}>{success}</Alert>}
-
-      <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
-        <Tab label="Amenities" />
-        <Tab label={`Bookings (${bookings.filter((b) => b.Status === "Pending").length} Pending)`} />
-      </Tabs>
-
-      {tab === 0 && (
-        <Grid container spacing={2}>
-          {amenities.map((a) => (
-            <Grid item xs={12} sm={6} md={4} key={a._id}>
-              <Card sx={{ borderRadius: 2, boxShadow: "0 2px 12px rgba(0,0,0,0.08)", height: "100%", display: "flex", flexDirection: "column" }}>
-                {/* coloured header bar */}
-                <Box sx={{ bgcolor: "#1a237e", borderRadius: "8px 8px 0 0", px: 2.5, py: 2 }}>
-                  <Typography variant="h6" fontWeight="bold" color="white" noWrap>{a.Name}</Typography>
-                </Box>
-
-                <CardContent sx={{ flex: 1, pt: 2 }}>
-                  <Box display="flex" gap={1} mb={1.5}>
-                    <Box sx={{ bgcolor: "#e8eaf6", borderRadius: 1.5, px: 1.5, py: 0.5, display: "flex", alignItems: "center", gap: 0.5 }}>
-                      <Typography variant="caption" color="#1a237e" fontWeight="bold">Capacity</Typography>
-                      <Typography variant="caption" fontWeight="bold">{a.Capacity} persons</Typography>
-                    </Box>
-                    <Box sx={{ bgcolor: "#e8f5e9", borderRadius: 1.5, px: 1.5, py: 0.5, display: "flex", alignItems: "center", gap: 0.5 }}>
-                      <Typography variant="caption" color="#2e7d32" fontWeight="bold">Fee</Typography>
-                      <Typography variant="caption" fontWeight="bold">PKR {Number(a.Booking_Fee).toLocaleString()}</Typography>
-                    </Box>
-                  </Box>
-                  <Typography variant="body2" color="text.secondary" sx={{ minHeight: 36 }}>
-                    {a.Description || "No description provided."}
-                  </Typography>
-                </CardContent>
-
-                <Box sx={{ px: 2, pb: 1.5, display: "flex", justifyContent: "flex-end", gap: 0.5 }}>
-                  <Tooltip title="Edit">
-                    <IconButton size="small" onClick={() => handleOpen(a)}
-                      sx={{ bgcolor: "#e8eaf6", "&:hover": { bgcolor: "#c5cae9" } }}>
-                      <EditIcon fontSize="small" sx={{ color: "#1a237e" }} />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Delete">
-                    <IconButton size="small" onClick={() => setDeleteTarget({ id: a._id, name: a.Name })}
-                      sx={{ bgcolor: "#ffebee", "&:hover": { bgcolor: "#ffcdd2" } }}>
-                      <DeleteIcon fontSize="small" sx={{ color: "#c62828" }} />
-                    </IconButton>
-                  </Tooltip>
-                </Box>
-              </Card>
-            </Grid>
-          ))}
-          {!amenities.length && (
-            <Grid item xs={12}>
-              <Typography align="center" color="text.secondary" sx={{ py: 4 }}>No amenities added yet</Typography>
-            </Grid>
-          )}
-        </Grid>
-      )}
-
-      {tab === 1 && (
-        <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
-          <Table>
-            <TableHead sx={{ bgcolor: "#1a237e" }}>
-              <TableRow>
-                {["Amenity", "Resident", "Date", "Time Slot", "Status", "Actions"].map((h) => (
-                  <TableCell key={h} sx={{ color: "white", fontWeight: "bold" }}>{h}</TableCell>
-                ))}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {bookings.map((b) => (
-                <TableRow key={b._id} hover>
-                  <TableCell>{b.amenity?.Name}</TableCell>
-                  <TableCell>{b.resident?.Name}</TableCell>
-                  <TableCell>{new Date(b.Booking_Date).toLocaleDateString()}</TableCell>
-                  <TableCell>{b.Time_Slot}</TableCell>
-                  <TableCell><Chip label={b.Status} color={b.Status === "Confirmed" ? "success" : b.Status === "Cancelled" ? "error" : "warning"} size="small" /></TableCell>
-                  <TableCell>
-                    {b.Status === "Pending" && (
-                      <>
-                        <Button size="small" color="success" onClick={() => handleBookingAction(b._id, "Confirmed")}>Approve</Button>
-                        <Button size="small" color="error" onClick={() => handleBookingAction(b._id, "Cancelled")}>Reject</Button>
-                      </>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-              {!bookings.length && <TableRow><TableCell colSpan={6} align="center" sx={{ py: 4, color: "#aaa" }}>No bookings found</TableCell></TableRow>}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
+    <div className="hs-amenity-management">
+      <div className="hs-page-heading hs-members-heading hs-amenity-heading"><div><h1>Amenity Management</h1><p>Manage shared facilities and resident bookings.</p></div><button className="hs-resident-add" onClick={() => handleOpen()}><AddIcon/>Add amenity</button></div>
+      {success && <Toast severity="success" sx={{ mb: 2 }} onClose={() => setSuccess("")}>{success}</Toast>}
+      {loadError && <Toast severity="error" sx={{ mb: 2 }} action={<Button color="inherit" onClick={() => { setLoading(true); load(); }}>Retry</Button>}>{loadError}</Toast>}
+      {actionError && <Toast severity="error" sx={{ mb: 2 }} onClose={() => setActionError("")}>{actionError}</Toast>}
+      <div className="hs-amenity-tabs" role="group" aria-label="Select amenity management view"><button className={tab === 0 ? "active" : ""} aria-pressed={tab === 0} onClick={() => setTab(0)}>Amenities<span>{amenities.length}</span></button><button className={tab === 1 ? "active" : ""} aria-pressed={tab === 1} onClick={() => setTab(1)}>Bookings<span>{bookings.length}</span></button>{pendingCount > 0 && <span className="hs-amenity-pending"><i/>{pendingCount} pending</span>}</div>
+      {tab === 0 ? <>
+        <label className="hs-resident-search hs-amenity-search"><SearchRounded/><input type="search" aria-label="Search amenities by name or description" placeholder="Search amenities..." value={amenitySearch} onChange={e => setAmenitySearch(e.target.value)}/></label>
+        <section className="hs-amenity-grid" aria-label="Shared amenities" aria-busy={loading}>
+          {loading ? <div className="hs-panel hs-loading" role="status"><CircularProgress size={28}/>Loading amenities...</div> : visibleAmenities.map(amenity => <article className="hs-panel hs-amenity-card" key={amenity._id}>
+            <div className="hs-amenity-card-heading"><span className="hs-amenity-icon"><AmenityIcon name={amenity.Name}/></span><h2>{amenity.Name}</h2></div><p className="hs-amenity-description">{amenity.Description || "No description provided."}</p>
+            <div className="hs-amenity-metrics"><div><PeopleOutlineRounded/><span><small>Capacity</small><strong>{Number(amenity.Capacity || 0).toLocaleString("en-PK")} {Number(amenity.Capacity) === 1 ? "person" : "people"}</strong></span></div><div><TollOutlined/><span><small>Booking fee</small><strong>{money(amenity.Booking_Fee)}</strong></span></div></div>
+            <div className="hs-resident-actions hs-amenity-card-actions"><button title="Edit amenity" aria-label={`Edit ${amenity.Name}`} onClick={() => handleOpen(amenity)}><EditOutlined/></button><button className="hs-resident-delete" title="Delete amenity" aria-label={`Delete ${amenity.Name}`} onClick={() => { setDeleteError(""); setDeleteTarget({ id: amenity._id, name: amenity.Name }); }}><DeleteOutlineRounded/></button></div>
+          </article>)}
+          {!loading && !visibleAmenities.length && <div className="hs-panel hs-empty">{loadError ? "Amenity data unavailable" : amenities.length ? "No amenities match your search." : "No amenities added yet."}</div>}
+        </section>
+        {!loading && pendingCount > 0 && <button className="hs-amenity-review" onClick={() => { setTab(1); setBookingSearch(""); setBookingStatus("Pending"); setPage(1); }}><i/><span>{pendingCount} {pendingCount === 1 ? "booking" : "bookings"} awaiting review</span><ArrowForwardRounded/></button>}
+      </> : <section className="hs-panel hs-bookings-panel" aria-label="Amenity bookings" aria-busy={loading}>
+        <h2>All bookings <span>{bookings.length}</span></h2>
+        <div className="hs-residents-filters hs-bookings-filters"><label className="hs-resident-search"><SearchRounded/><input type="search" aria-label="Search bookings by amenity, resident or time slot" placeholder="Search bookings..." value={bookingSearch} onChange={e => { setBookingSearch(e.target.value); setPage(1); }}/></label><div className="hs-resident-filter"><select aria-label="Filter bookings by status" value={bookingStatus} onChange={e => { setBookingStatus(e.target.value); setPage(1); }}><option value="">All statuses</option>{["Pending", "Confirmed", "Cancelled"].map(value => <option key={value} value={value}>{value}</option>)}</select><KeyboardArrowDownRounded/></div></div>
+        <div className="hs-residents-table-wrap"><table className="hs-residents-table hs-bookings-table"><thead><tr>{["Amenity", "Resident", "Date", "Time slot", "Status", "Actions"].map(label => <th scope="col" key={label}>{label}</th>)}</tr></thead><tbody>
+          {loading ? <tr><td colSpan={6}><div className="hs-residents-loading" role="status"><CircularProgress size={26}/>Loading bookings...</div></td></tr> : visibleBookings.map(booking => <tr key={booking._id}><td><strong>{booking.amenity?.Name || "Deleted amenity"}</strong></td><td>{booking.resident?.Name || "—"}</td><td>{dateLabel(booking.Booking_Date)}</td><td>{booking.Time_Slot || "—"}</td><td><span className={`hs-booking-status ${bookingStatusClass(booking.Status)}`}><i/>{booking.Status}</span></td><td>{booking.Status === "Pending" ? <div className="hs-booking-actions"><button disabled={updatingId !== null} className="hs-booking-approve" aria-label={`Approve booking for ${booking.amenity?.Name || "deleted amenity"} on ${dateLabel(booking.Booking_Date)}`} onClick={() => handleBookingAction(booking._id, "Confirmed")}><CheckRounded/>{updatingId === booking._id ? "Updating..." : "Approve"}</button><button disabled={updatingId !== null} className="hs-booking-reject" aria-label={`Reject booking for ${booking.amenity?.Name || "deleted amenity"} on ${dateLabel(booking.Booking_Date)}`} onClick={() => handleBookingAction(booking._id, "Cancelled")}><CloseRounded/>Reject</button></div> : "—"}</td></tr>)}
+          {!loading && !visibleBookings.length && <tr><td colSpan={6} className="hs-empty">{loadError ? "Booking data unavailable" : bookings.length ? "No bookings match your search or filter." : "No bookings found."}</td></tr>}
+        </tbody></table></div>
+        <div className="hs-residents-pagination"><span aria-live="polite">Showing {filteredBookings.length ? (currentPage - 1) * pageSize + 1 : 0}–{Math.min(currentPage * pageSize, filteredBookings.length)} of {filteredBookings.length} bookings</span><div><button disabled={loading || currentPage <= 1} onClick={() => setPage(currentPage - 1)}><ChevronLeftRounded/>Previous</button><button disabled={loading || currentPage * pageSize >= filteredBookings.length} onClick={() => setPage(currentPage + 1)}>Next<ChevronRightRounded/></button></div></div>
+      </section>}
 
       {/* ── Add / Edit Dialog ── */}
-      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+      <AdminDialog busy={saving} open={open} onClose={() => { if (!saving) setOpen(false); }} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
         <ModalHeader icon={<SpaIcon />} title={editId ? "Edit Amenity" : "Add Amenity"}
           subtitle={editId ? "Update amenity details" : "Enter amenity information"} />
         <DialogContent sx={{ pt: 3, pb: 1, px: 3 }}>
-          {submitError && <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSubmitError("")}>{submitError}</Alert>}
+          {submitError && <Toast severity="error" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSubmitError("")}>{submitError}</Toast>}
           <TextField fullWidth label="Amenity Name" required value={form.Name}
             onChange={(e) => setForm({ ...form, Name: e.target.value })} {...field("Name")} />
-          <Box display="flex" gap={2} mb={1}>
+          <Box display="flex" flexDirection={{ xs: "column", sm: "row" }} gap={2} mb={1}>
             <TextField fullWidth label="Capacity" type="number" required value={form.Capacity}
               onChange={(e) => setForm({ ...form, Capacity: e.target.value })} {...field("Capacity")} />
             <TextField fullWidth label="Booking Fee (PKR)" type="number" required value={form.Booking_Fee}
@@ -222,36 +180,19 @@ const Amenities = () => {
         </DialogContent>
         <Divider />
         <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
-          <Button onClick={() => setOpen(false)} sx={{ color: "#555", borderRadius: 2 }}>Cancel</Button>
+          <Button disabled={saving} onClick={() => setOpen(false)} sx={{ color: "#555", borderRadius: 2 }}>Cancel</Button>
           <Button variant="contained" onClick={handleSave} disabled={!isValid || saving}
-            sx={{ bgcolor: "#1a237e", borderRadius: 2, px: 3, minWidth: 120, "&:disabled": { bgcolor: "#c5cae9", color: "#fff" } }}>
+            sx={{ bgcolor: "#0854ed", borderRadius: 2, px: 3, minWidth: 120, "&:disabled": { bgcolor: "#c5cae9", color: "#fff" } }}>
             {saving ? <CircularProgress size={18} color="inherit" /> : (editId ? "Save Changes" : "Add Amenity")}
           </Button>
         </DialogActions>
-      </Dialog>
+      </AdminDialog>
 
       {/* ── Delete Dialog ── */}
-      <Dialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3, overflow: "hidden" } }}>
-        <Box sx={{ bgcolor: "#c62828", height: 6 }} />
-        <DialogContent sx={{ pt: 4, pb: 2, px: 3, textAlign: "center" }}>
-          <Avatar sx={{ bgcolor: "#ffebee", width: 64, height: 64, mx: "auto", mb: 2 }}>
-            <WarningAmberIcon sx={{ color: "#c62828", fontSize: 36 }} />
-          </Avatar>
-          <Typography variant="h6" fontWeight="bold" mb={1}>Delete Amenity?</Typography>
-          <Typography variant="body2" color="text.secondary">You are about to permanently delete</Typography>
-          <Typography fontWeight="bold" fontSize={15} mt={0.5} mb={1.5} color="#1a237e">{deleteTarget?.name}</Typography>
-          <Typography variant="body2" color="text.secondary">This action <strong>cannot be undone</strong>.</Typography>
-        </DialogContent>
-        <Divider />
-        <DialogActions sx={{ px: 3, py: 2, gap: 1, justifyContent: "center" }}>
-          <Button fullWidth variant="outlined" onClick={() => setDeleteTarget(null)} sx={{ borderRadius: 2, borderColor: "#ccc", color: "#555", py: 1 }}>Cancel</Button>
-          <Button fullWidth variant="contained" onClick={handleDelete} disabled={deleting}
-            sx={{ borderRadius: 2, bgcolor: "#c62828", py: 1, "&:hover": { bgcolor: "#b71c1c" } }}>
-            {deleting ? <CircularProgress size={18} color="inherit" /> : "Yes, Delete"}
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+      <AdminDeleteDialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={handleDelete} busy={deleting} title="Delete Amenity?" name={deleteTarget?.name}>
+        {deleteError && <Toast severity="error">{deleteError}</Toast>}
+      </AdminDeleteDialog>
+    </div>
   );
 };
 

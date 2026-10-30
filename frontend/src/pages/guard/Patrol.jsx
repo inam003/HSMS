@@ -1,7 +1,10 @@
+import { PortalPageTitle } from "../../components/common/PortalUI";
+import Toast from "../../components/common/Toast";
+import AdminDialog, { AdminDialogHeader as ModalHeader } from "../../components/common/AdminDialog";
 import { useEffect, useState } from "react";
 import {
   Box, Typography, Button, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Paper, Dialog, DialogContent, DialogActions,
+  TableHead, TableRow, Paper, DialogContent, DialogActions,
   Alert, Chip, Select, MenuItem, FormControl, InputLabel, FormHelperText,
   Divider, CircularProgress, Card, CardContent, Grid
 } from "@mui/material";
@@ -16,17 +19,6 @@ const CHECKPOINTS = [
   "Block B Entrance", "Swimming Pool", "Garden Area", "Basement"
 ];
 
-const ModalHeader = ({ icon, title, subtitle, color = "#4527a0" }) => (
-  <Box sx={{ bgcolor: color, px: 3, py: 2.5, borderRadius: "12px 12px 0 0" }}>
-    <Box display="flex" alignItems="center" gap={1.5}>
-      <Box sx={{ color: "rgba(255,255,255,0.85)", display: "flex" }}>{icon}</Box>
-      <Box>
-        <Typography variant="h6" fontWeight="bold" color="white">{title}</Typography>
-        {subtitle && <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.7)" }}>{subtitle}</Typography>}
-      </Box>
-    </Box>
-  </Box>
-);
 
 const validate = (form) => ({
   CheckpointName: !form.CheckpointName ? "Please select a checkpoint" : "",
@@ -77,18 +69,18 @@ const GuardPatrol = () => {
 
   if (loading) return (
     <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-      <CircularProgress sx={{ color: "#4527a0" }} />
+      <CircularProgress sx={{ color: "#0854ed" }} />
     </Box>
   );
 
   return (
-    <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h5" fontWeight="bold">Patrol Checkpoint Logging</Typography>
+    <Box className="hs-portal-page hs-portal-guard-Patrol">
+      <Box className="hs-portal-heading-row" display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+        <PortalPageTitle subtitle="Record checkpoint visits and review your patrol history.">Patrol Checkpoint Logging</PortalPageTitle>
         <Button variant="contained" startIcon={<CheckCircleIcon />} onClick={handleOpen}
-          sx={{ bgcolor: "#4527a0", borderRadius: 2 }}>Log Checkpoint</Button>
+          sx={{ bgcolor: "#0854ed", borderRadius: 2 }}>Log Checkpoint</Button>
       </Box>
-      {success && <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSuccess("")}>{success}</Alert>}
+      {success && <Toast severity="success" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSuccess("")}>{success}</Toast>}
 
       <Grid container spacing={2} mb={3}>
         {[
@@ -96,7 +88,7 @@ const GuardPatrol = () => {
           { label: "Skipped Today",   value: skippedToday,     color: "#c62828", bg: "#ffebee", icon: <CancelIcon /> },
           { label: "Total Logs",      value: todayLogs.length, color: "#1565c0", bg: "#e3f2fd", icon: <SensorsIcon /> },
         ].map(({ label, value, color, bg, icon }) => (
-          <Grid item xs={4} key={label}>
+          <Grid size={{ xs: 4 }}   key={label}>
             <Card sx={{ borderRadius: 2, borderLeft: `5px solid ${color}`,
               boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
               <CardContent sx={{ p: 2.5 }}>
@@ -119,7 +111,7 @@ const GuardPatrol = () => {
       <Typography variant="h6" fontWeight="bold" mb={1}>Patrol Log History</Typography>
       <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
         <Table>
-          <TableHead sx={{ bgcolor: "#4527a0" }}>
+          <TableHead sx={{ bgcolor: "#0854ed" }}>
             <TableRow>
               {["Checkpoint", "Guard", "Log Time", "Status"].map((h) => (
                 <TableCell key={h} sx={{ color: "white", fontWeight: "bold" }}>{h}</TableCell>
@@ -144,10 +136,10 @@ const GuardPatrol = () => {
       </TableContainer>
 
       {/* ── Log Checkpoint Dialog ── */}
-      <Dialog open={open} onClose={() => !logging && setOpen(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+      <AdminDialog open={open} onClose={() => !logging && setOpen(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
         <ModalHeader icon={<RouteIcon />} title="Log Patrol Checkpoint" subtitle="Record the checkpoint status" />
         <DialogContent sx={{ pt: 3, pb: 1, px: 3 }}>
-          {submitError && <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSubmitError("")}>{submitError}</Alert>}
+          {submitError && <Toast severity="error" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSubmitError("")}>{submitError}</Toast>}
           <FormControl fullWidth required error={!!touched.CheckpointName && !!errors.CheckpointName} sx={{ mb: 1 }}>
             <InputLabel>Checkpoint</InputLabel>
             <Select value={form.CheckpointName} label="Checkpoint"
@@ -170,11 +162,11 @@ const GuardPatrol = () => {
         <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
           <Button onClick={() => setOpen(false)} disabled={logging} sx={{ color: "#555", borderRadius: 2 }}>Cancel</Button>
           <Button variant="contained" onClick={handleLog} disabled={!isValid || logging}
-            sx={{ bgcolor: "#4527a0", borderRadius: 2, px: 3, minWidth: 140, "&:disabled": { bgcolor: "#d1c4e9", color: "#fff" } }}>
+            sx={{ bgcolor: "#0854ed", borderRadius: 2, px: 3, minWidth: 140, "&:disabled": { bgcolor: "#d1c4e9", color: "#fff" } }}>
             {logging ? <CircularProgress size={18} color="inherit" /> : "Log Checkpoint"}
           </Button>
         </DialogActions>
-      </Dialog>
+      </AdminDialog>
     </Box>
   );
 };

@@ -1,7 +1,10 @@
+import { PortalPageTitle } from "../../components/common/PortalUI";
+import Toast from "../../components/common/Toast";
+import AdminDialog, { AdminDialogHeader as ModalHeader } from "../../components/common/AdminDialog";
 import { useEffect, useState } from "react";
 import {
   Box, Typography, Button, Grid, Card, CardContent, CardActions, Table, TableBody,
-  TableCell, TableContainer, TableHead, TableRow, Paper, Dialog, DialogContent,
+  TableCell, TableContainer, TableHead, TableRow, Paper, DialogContent,
   DialogActions, TextField, Select, MenuItem, FormControl, InputLabel, FormHelperText,
   Alert, Chip, Tabs, Tab, Divider, CircularProgress
 } from "@mui/material";
@@ -9,17 +12,6 @@ import SpaIcon from "@mui/icons-material/Spa";
 import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 import api from "../../api/axios";
 
-const ModalHeader = ({ icon, title, subtitle, color = "#1a237e" }) => (
-  <Box sx={{ bgcolor: color, px: 3, py: 2.5, borderRadius: "12px 12px 0 0" }}>
-    <Box display="flex" alignItems="center" gap={1.5}>
-      <Box sx={{ color: "rgba(255,255,255,0.85)", display: "flex" }}>{icon}</Box>
-      <Box>
-        <Typography variant="h6" fontWeight="bold" color="white">{title}</Typography>
-        {subtitle && <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.7)" }}>{subtitle}</Typography>}
-      </Box>
-    </Box>
-  </Box>
-);
 
 const validate = (form) => ({
   Booking_Date: !form.Booking_Date ? "Booking date is required"    : "",
@@ -80,14 +72,14 @@ const Amenities = () => {
 
   if (loading) return (
     <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-      <CircularProgress sx={{ color: "#1a237e" }} />
+      <CircularProgress sx={{ color: "#0854ed" }} />
     </Box>
   );
 
   return (
-    <Box>
-      <Typography variant="h5" fontWeight="bold" mb={2}>Amenity Booking</Typography>
-      {success && <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSuccess("")}>{success}</Alert>}
+    <Box className="hs-portal-page hs-portal-resident-Amenities">
+      <PortalPageTitle subtitle="Explore shared facilities and manage your bookings.">Amenity Booking</PortalPageTitle>
+      {success && <Toast severity="success" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSuccess("")}>{success}</Toast>}
 
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
         <Tab label="Available Amenities" />
@@ -97,19 +89,19 @@ const Amenities = () => {
       {tab === 0 && (
         <Grid container spacing={2}>
           {amenities.map((a) => (
-            <Grid item xs={12} sm={6} md={4} key={a._id}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}     key={a._id}>
               <Card sx={{ borderRadius: 2, boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
                 height: "100%", display: "flex", flexDirection: "column" }}>
                 {/* Blue header */}
-                <Box sx={{ bgcolor: "#1a237e", borderRadius: "8px 8px 0 0", px: 2.5, py: 2 }}>
+                <Box className="hs-portal-card-header" sx={{ bgcolor: "#0854ed", borderRadius: "8px 8px 0 0", px: 2.5, py: 2 }}>
                   <Typography variant="h6" fontWeight="bold" color="white" noWrap>{a.Name}</Typography>
                 </Box>
                 <CardContent sx={{ flex: 1, pt: 2 }}>
                   {/* Info pills */}
                   <Box display="flex" gap={1} mb={1.5} flexWrap="wrap">
-                    <Box sx={{ bgcolor: "#e8eaf6", borderRadius: 1.5, px: 1.5, py: 0.5,
+                    <Box sx={{ bgcolor: "#e9f1ff", borderRadius: 1.5, px: 1.5, py: 0.5,
                       display: "flex", alignItems: "center", gap: 0.5 }}>
-                      <Typography variant="caption" color="#1a237e" fontWeight="bold">Capacity</Typography>
+                      <Typography variant="caption" color="#0854ed" fontWeight="bold">Capacity</Typography>
                       <Typography variant="caption" fontWeight="bold">{a.Capacity} persons</Typography>
                     </Box>
                     <Box sx={{ bgcolor: "#e8f5e9", borderRadius: 1.5, px: 1.5, py: 0.5,
@@ -126,7 +118,7 @@ const Amenities = () => {
                 </CardContent>
                 <Box sx={{ px: 2, pb: 2 }}>
                   <Button fullWidth variant="contained" onClick={() => openBook(a)}
-                    sx={{ bgcolor: "#1a237e", borderRadius: 2, "&:hover": { bgcolor: "#283593" } }}>
+                    sx={{ bgcolor: "#0854ed", borderRadius: 2, "&:hover": { bgcolor: "#0854ed" } }}>
                     Book Now
                   </Button>
                 </Box>
@@ -134,7 +126,7 @@ const Amenities = () => {
             </Grid>
           ))}
           {!amenities.length && (
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}  >
               <Box sx={{ textAlign: "center", py: 8 }}>
                 <SpaIcon sx={{ fontSize: 56, color: "#ddd", mb: 2 }} />
                 <Typography variant="h6" color="text.secondary">No Amenities Available</Typography>
@@ -148,7 +140,7 @@ const Amenities = () => {
       {tab === 1 && (
         <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
           <Table>
-            <TableHead sx={{ bgcolor: "#1a237e" }}>
+            <TableHead sx={{ bgcolor: "#0854ed" }}>
               <TableRow>
                 {["Amenity", "Date", "Time Slot", "Status", "Actions"].map((h) => (
                   <TableCell key={h} sx={{ color: "white", fontWeight: "bold" }}>{h}</TableCell>
@@ -174,11 +166,11 @@ const Amenities = () => {
       )}
 
       {/* ── Book Amenity Dialog ── */}
-      <Dialog open={!!selected} onClose={() => !booking && setSelected(null)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+      <AdminDialog open={!!selected} onClose={() => !booking && setSelected(null)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
         <ModalHeader icon={<EventAvailableIcon />} title={`Book ${selected?.Name}`}
           subtitle={`Fee: PKR ${selected?.Booking_Fee} • Pending admin approval`} />
         <DialogContent sx={{ pt: 3, pb: 1, px: 3 }}>
-          {submitError && <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSubmitError("")}>{submitError}</Alert>}
+          {submitError && <Toast severity="error" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSubmitError("")}>{submitError}</Toast>}
           <TextField fullWidth label="Booking Date" type="date" required InputLabelProps={{ shrink: true }}
             value={form.Booking_Date} onChange={(e) => setForm({ ...form, Booking_Date: e.target.value })} {...field("Booking_Date")} />
           <FormControl fullWidth required error={!!touched.Time_Slot && !!errors.Time_Slot}>
@@ -194,11 +186,11 @@ const Amenities = () => {
         <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
           <Button onClick={() => setSelected(null)} disabled={booking} sx={{ color: "#555", borderRadius: 2 }}>Cancel</Button>
           <Button variant="contained" onClick={handleBook} disabled={!isValid || booking}
-            sx={{ bgcolor: "#1a237e", borderRadius: 2, px: 3, minWidth: 140, "&:disabled": { bgcolor: "#c5cae9", color: "#fff" } }}>
+            sx={{ bgcolor: "#0854ed", borderRadius: 2, px: 3, minWidth: 140, "&:disabled": { bgcolor: "#c5cae9", color: "#fff" } }}>
             {booking ? <CircularProgress size={18} color="inherit" /> : "Submit Booking"}
           </Button>
         </DialogActions>
-      </Dialog>
+      </AdminDialog>
     </Box>
   );
 };

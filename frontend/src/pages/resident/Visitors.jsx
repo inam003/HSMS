@@ -1,7 +1,10 @@
+import { PortalPageTitle } from "../../components/common/PortalUI";
+import Toast from "../../components/common/Toast";
+import AdminDialog, { AdminDialogHeader as ModalHeader } from "../../components/common/AdminDialog";
 import { useEffect, useState } from "react";
 import {
   Box, Typography, Button, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Paper, Dialog, DialogContent, DialogActions,
+  TableHead, TableRow, Paper, DialogContent, DialogActions,
   TextField, Alert, Chip, Select, MenuItem, FormControl, InputLabel,
   FormHelperText, Divider, CircularProgress
 } from "@mui/material";
@@ -9,17 +12,6 @@ import AddIcon from "@mui/icons-material/Add";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import api from "../../api/axios";
 
-const ModalHeader = ({ icon, title, subtitle, color = "#1a237e" }) => (
-  <Box sx={{ bgcolor: color, px: 3, py: 2.5, borderRadius: "12px 12px 0 0" }}>
-    <Box display="flex" alignItems="center" gap={1.5}>
-      <Box sx={{ color: "rgba(255,255,255,0.85)", display: "flex" }}>{icon}</Box>
-      <Box>
-        <Typography variant="h6" fontWeight="bold" color="white">{title}</Typography>
-        {subtitle && <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.7)" }}>{subtitle}</Typography>}
-      </Box>
-    </Box>
-  </Box>
-);
 
 const validate = (form) => ({
   Name:       !form.Name.trim()       ? "Visitor name is required"    : "",
@@ -73,22 +65,22 @@ const Visitors = () => {
 
   if (loading) return (
     <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-      <CircularProgress sx={{ color: "#1a237e" }} />
+      <CircularProgress sx={{ color: "#0854ed" }} />
     </Box>
   );
 
   return (
-    <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h5" fontWeight="bold">Pre-Approve Visitors</Typography>
+    <Box className="hs-portal-page hs-portal-resident-Visitors">
+      <Box className="hs-portal-heading-row" display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+        <PortalPageTitle subtitle="Pre-approve guests and review visitor approvals.">Pre-Approve Visitors</PortalPageTitle>
         <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpen}
-          sx={{ bgcolor: "#1a237e", borderRadius: 2 }}>Pre-Approve Guest</Button>
+          sx={{ bgcolor: "#0854ed", borderRadius: 2 }}>Pre-Approve Guest</Button>
       </Box>
-      {success && <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSuccess("")}>{success}</Alert>}
+      {success && <Toast severity="success" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSuccess("")}>{success}</Toast>}
 
       <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
         <Table>
-          <TableHead sx={{ bgcolor: "#1a237e" }}>
+          <TableHead sx={{ bgcolor: "#0854ed" }}>
             <TableRow>
               {["Visitor Name", "Contact", "Vehicle No.", "Expected Arrival", "Status"].map((h) => (
                 <TableCell key={h} sx={{ color: "white", fontWeight: "bold" }}>{h}</TableCell>
@@ -111,10 +103,10 @@ const Visitors = () => {
       </TableContainer>
 
       {/* ── Pre-Approve Dialog ── */}
-      <Dialog open={open} onClose={() => !submitting && setOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+      <AdminDialog open={open} onClose={() => !submitting && setOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
         <ModalHeader icon={<PersonAddIcon />} title="Pre-Approve Visitor" subtitle="Add visitor details for gate verification" />
         <DialogContent sx={{ pt: 3, pb: 1, px: 3 }}>
-          {submitError && <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSubmitError("")}>{submitError}</Alert>}
+          {submitError && <Toast severity="error" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSubmitError("")}>{submitError}</Toast>}
           <Box display="flex" gap={2} mb={1}>
             <TextField fullWidth label="Visitor Name" required value={form.Name}
               onChange={(e) => setForm({ ...form, Name: e.target.value })} {...field("Name")} />
@@ -140,11 +132,11 @@ const Visitors = () => {
         <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
           <Button onClick={() => setOpen(false)} disabled={submitting} sx={{ color: "#555", borderRadius: 2 }}>Cancel</Button>
           <Button variant="contained" onClick={handleSubmit} disabled={!isValid || submitting}
-            sx={{ bgcolor: "#1a237e", borderRadius: 2, px: 3, minWidth: 130, "&:disabled": { bgcolor: "#c5cae9", color: "#fff" } }}>
+            sx={{ bgcolor: "#0854ed", borderRadius: 2, px: 3, minWidth: 130, "&:disabled": { bgcolor: "#c5cae9", color: "#fff" } }}>
             {submitting ? <CircularProgress size={18} color="inherit" /> : "Pre-Approve"}
           </Button>
         </DialogActions>
-      </Dialog>
+      </AdminDialog>
     </Box>
   );
 };

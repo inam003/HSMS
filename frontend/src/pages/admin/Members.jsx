@@ -1,20 +1,25 @@
+import AdminDialog, { AdminDialogHeader as ModalHeader, AdminDeleteDialog } from "../../components/common/AdminDialog";
+import Toast from "../../components/common/Toast";
 import { useEffect, useState } from "react";
 import {
-  Box, Typography, Button, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Paper, IconButton, Dialog, DialogTitle, DialogContent,
-  DialogActions, TextField, FormControlLabel, Switch, Alert, Chip, Tooltip,
-  Divider, InputAdornment, Avatar
+  Box, Typography, Button, DialogContent,
+  DialogActions, TextField, Switch, Divider, InputAdornment, Avatar
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
 import PersonIcon from "@mui/icons-material/Person";
 import EmailIcon from "@mui/icons-material/Email";
 import LockIcon from "@mui/icons-material/Lock";
 import PhoneIcon from "@mui/icons-material/Phone";
-import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import CircularProgress from "@mui/material/CircularProgress";
 import api from "../../api/axios";
+import SearchRounded from "@mui/icons-material/SearchRounded";
+import FilterAltOutlined from "@mui/icons-material/FilterAltOutlined";
+import KeyboardArrowDownRounded from "@mui/icons-material/KeyboardArrowDownRounded";
+import ChevronLeftRounded from "@mui/icons-material/ChevronLeftRounded";
+import ChevronRightRounded from "@mui/icons-material/ChevronRightRounded";
+import EditOutlined from "@mui/icons-material/EditOutlined";
+import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
+import "./Members.css";
 
 /* ── Validation ──────────────────────────────────────────────────────── */
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -32,6 +37,19 @@ const emptyForm = { Name: "", Email: "", Password: "", Contact_No: "", Emergency
 /* ═══════════════════════════════════════════════════════════════════════ */
 const Members = () => {
   const [residents, setResidents] = useState([]);
+  const [search, setSearch] = useState("");
+  const [type, setType] = useState("all");
+  const [page, setPage] = useState(1);
+  const [loadError, setLoadError] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const pageSize = 10;
+  const filtered = residents.filter(r => {
+    const query = search.trim().toLowerCase();
+    return ((r.Name || "").toLowerCase().includes(query) || (r.Email || "").toLowerCase().includes(query)) && (type === "all" || (type === "owner" ? r.Is_Owner : !r.Is_Owner));
+  });
+  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(page, pageCount);
+  const visibleResidents = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
   const [open, setOpen]           = useState(false);
   const [editId, setEditId]       = useState(null);
   const [form, setForm]           = useState(emptyForm);
@@ -47,8 +65,11 @@ const Members = () => {
 
   const load = async () => {
     try {
+      setLoadError("");
       const { data } = await api.get("/residents");
       setResidents(data);
+    } catch (e) {
+      setLoadError(e.response?.data?.message || "Unable to load residents. Please try again.");
     } finally { setLoading(false); }
   };
 
@@ -98,96 +119,57 @@ const Members = () => {
   const handleDelete = async () => {
     if (!deleteTarget) return;
     setDeleting(true);
+    setDeleteError("");
     try {
       await api.delete(`/residents/${deleteTarget.id}`);
       setSuccess(`${deleteTarget.name} has been removed.`);
+      setDeleteTarget(null);
       load();
-    } catch { /* ignore */ }
-    finally { setDeleting(false); setDeleteTarget(null); }
+    } catch (e) { setDeleteError(e.response?.data?.message || "Unable to delete resident. Please try again."); }
+    finally { setDeleting(false); }
   };
 
   /* ─────────────────────────────────────────────────────────────────── */
-  if (loading) return (
-    <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-      <CircularProgress sx={{ color: "#1a237e" }} />
-    </Box>
-  );
-
   return (
-    <Box>
-      {/* Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h5" fontWeight="bold">Residents Management</Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpen()} sx={{ bgcolor: "#1a237e", borderRadius: 2 }}>
-          Add Resident
-        </Button>
-      </Box>
-
-      {success && <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSuccess("")}>{success}</Alert>}
-
-      {/* Table */}
-      <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
-        <Table>
-          <TableHead sx={{ bgcolor: "#1a237e" }}>
-            <TableRow>
-              {["Name", "Email", "Contact", "Type", "Emergency Contact", "Actions"].map((h) => (
-                <TableCell key={h} sx={{ color: "white", fontWeight: "bold" }}>{h}</TableCell>
-              ))}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {residents.map((r) => (
-              <TableRow key={r._id} hover>
-                <TableCell>{r.Name}</TableCell>
-                <TableCell>{r.Email}</TableCell>
-                <TableCell>{r.Contact_No || "—"}</TableCell>
-                <TableCell>
-                  <Chip label={r.Is_Owner ? "Owner" : "Tenant"} color={r.Is_Owner ? "primary" : "default"} size="small" />
-                </TableCell>
-                <TableCell>{r.Emergency_Contact || "—"}</TableCell>
-                <TableCell>
-                  <Tooltip title="Edit">
-                    <IconButton size="small" color="primary" onClick={() => handleOpen(r)}><EditIcon /></IconButton>
-                  </Tooltip>
-                  <Tooltip title="Delete">
-                    <IconButton size="small" color="error" onClick={() => setDeleteTarget({ id: r._id, name: r.Name })}>
-                      <DeleteIcon />
-                    </IconButton>
-                  </Tooltip>
-                </TableCell>
-              </TableRow>
-            ))}
-            {!residents.length && (
-              <TableRow>
-                <TableCell colSpan={6} align="center" sx={{ py: 4, color: "#aaa" }}>No residents found</TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+    <div className="hs-members">
+      <div className="hs-page-heading hs-members-heading">
+        <div><h1>Residents</h1><p>Manage resident profiles and household records.</p></div>
+        <button className="hs-resident-add" onClick={() => handleOpen()}><AddIcon/>Add resident</button>
+      </div>
+      {success && <Toast severity="success" sx={{ mb: 2 }} onClose={() => setSuccess("")}>{success}</Toast>}
+      {loadError && <Toast severity="error" sx={{ mb: 2 }} action={<Button color="inherit" onClick={() => {setLoading(true);load();}}>Retry</Button>}>{loadError}</Toast>}
+      <section className="hs-panel hs-residents-panel" aria-label="Resident directory" aria-busy={loading}>
+        <div className="hs-residents-toolbar">
+          <h2>All residents <span className="hs-residents-count">{residents.length}</span></h2>
+          <div className="hs-residents-filters">
+            <label className="hs-resident-search"><SearchRounded/><input type="search" aria-label="Search residents by name or email" placeholder="Search by name or email..." value={search} onChange={e => {setSearch(e.target.value);setPage(1);}}/></label>
+            <div className="hs-resident-filter"><FilterAltOutlined/><select aria-label="Filter residents by type" value={type} onChange={e => {setType(e.target.value);setPage(1);}}><option value="all">All types</option><option value="owner">Owners</option><option value="tenant">Tenants</option></select><KeyboardArrowDownRounded/></div>
+          </div>
+        </div>
+        <div className="hs-residents-table-wrap"><table className="hs-residents-table"><thead><tr>{["Name", "Email", "Contact", "Type", "Emergency contact", "Actions"].map(h => <th key={h} scope="col">{h}</th>)}</tr></thead>
+          <tbody>{loading ? <tr><td colSpan={6}><div className="hs-residents-loading" role="status"><CircularProgress size={26}/>Loading residents…</div></td></tr> : visibleResidents.map(r => <tr key={r._id}>
+            <td><div className="hs-resident-person"><span className="hs-resident-avatar">{(r.Name || "?").charAt(0).toUpperCase()}</span><strong>{r.Name}</strong></div></td>
+            <td>{r.Email}</td><td>{r.Contact_No || "—"}</td><td><span className={`hs-resident-type ${r.Is_Owner ? "owner" : "tenant"}`}>{r.Is_Owner ? "Owner" : "Tenant"}</span></td><td>{r.Emergency_Contact || "—"}</td>
+            <td><div className="hs-resident-actions"><button className="hs-resident-edit" title="Edit resident" aria-label={`Edit ${r.Name}`} onClick={() => handleOpen(r)}><EditOutlined/></button><button className="hs-resident-delete" title="Delete resident" aria-label={`Delete ${r.Name}`} onClick={() => {setDeleteError("");setDeleteTarget({id:r._id,name:r.Name});}}><DeleteOutlineRounded/></button></div></td>
+          </tr>)}{!loading && !visibleResidents.length && <tr><td colSpan={6} className="hs-empty">{loadError ? "Resident data unavailable" : residents.length ? "No residents match your search or filter." : "No residents yet. Add a resident to get started."}</td></tr>}</tbody>
+        </table></div>
+        <div className="hs-residents-pagination"><span aria-live="polite">Showing {filtered.length ? (currentPage - 1) * pageSize + 1 : 0}–{Math.min(currentPage * pageSize, filtered.length)} of {filtered.length} residents</span><div><button disabled={loading || currentPage <= 1} onClick={() => setPage(currentPage - 1)}><ChevronLeftRounded/>Previous</button><button disabled={loading || currentPage >= pageCount} onClick={() => setPage(currentPage + 1)}>Next<ChevronRightRounded/></button></div></div>
+      </section>
 
       {/* ── Add / Edit Dialog ── */}
-      <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 3 } }}>
+      <AdminDialog busy={saving} open={open} onClose={() => {if (!saving) setOpen(false);}} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 3 } }}>
 
-        {/* Title */}
-        <Box sx={{ bgcolor: "#1a237e", px: 3, py: 2.5, borderRadius: "12px 12px 0 0" }}>
-          <Typography variant="h6" fontWeight="bold" color="white">
-            {editId ? "Edit Resident" : "Add New Resident"}
-          </Typography>
-          <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.7)" }}>
-            {editId ? "Update resident information below" : "Fill in the details to register a new resident"}
-          </Typography>
-        </Box>
+        <ModalHeader icon={<PersonIcon/>} title={editId ? "Edit Resident" : "Add New Resident"} subtitle={editId ? "Update resident information below" : "Fill in the details to register a new resident"}/>
 
         <DialogContent sx={{ pt: 3, pb: 1, px: 3 }}>
           {submitError && (
-            <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSubmitError("")}>
+            <Toast severity="error" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSubmitError("")}>
               {submitError}
-            </Alert>
+            </Toast>
           )}
 
           {/* Name + Email row */}
-          <Box display="flex" gap={2} mb={1}>
+          <Box display="flex" flexDirection={{ xs: "column", sm: "row" }} gap={2} mb={1}>
             <TextField
               fullWidth
               label="Full Name"
@@ -223,7 +205,7 @@ const Members = () => {
           />
 
           {/* Contact + Emergency */}
-          <Box display="flex" gap={2} mt={1} mb={1}>
+          <Box display="flex" flexDirection={{ xs: "column", sm: "row" }} gap={2} mt={1} mb={1}>
             <TextField
               fullWidth
               label="Contact Number"
@@ -265,76 +247,30 @@ const Members = () => {
             <Switch
               checked={form.Is_Owner}
               onChange={(e) => setForm({ ...form, Is_Owner: e.target.checked })}
-              sx={{ "& .MuiSwitch-thumb": { bgcolor: form.Is_Owner ? "#1a237e" : "#bbb" } }}
+              sx={{ "& .MuiSwitch-thumb": { bgcolor: form.Is_Owner ? "#0854ed" : "#bbb" } }}
             />
           </Box>
         </DialogContent>
 
         <Divider />
         <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
-          <Button onClick={() => setOpen(false)} sx={{ color: "#555", borderRadius: 2 }}>Cancel</Button>
+          <Button disabled={saving} onClick={() => setOpen(false)} sx={{ color: "#555", borderRadius: 2 }}>Cancel</Button>
           <Button
             variant="contained"
             onClick={handleSave}
             disabled={!isValid || saving}
-            sx={{ bgcolor: "#1a237e", borderRadius: 2, px: 3, minWidth: 130, "&:disabled": { bgcolor: "#c5cae9", color: "#fff" } }}
+            sx={{ bgcolor: "#0854ed", borderRadius: 2, px: 3, minWidth: 130, "&:disabled": { bgcolor: "#c5cae9", color: "#fff" } }}
           >
             {saving ? <CircularProgress size={18} color="inherit" /> : (editId ? "Save Changes" : "Add Resident")}
           </Button>
         </DialogActions>
-      </Dialog>
+      </AdminDialog>
 
       {/* ── Delete Confirmation Dialog ── */}
-      <Dialog
-        open={!!deleteTarget}
-        onClose={() => setDeleteTarget(null)}
-        maxWidth="xs"
-        fullWidth
-        PaperProps={{ sx: { borderRadius: 3, overflow: "hidden" } }}
-      >
-        {/* Red top bar */}
-        <Box sx={{ bgcolor: "#c62828", height: 6 }} />
-
-        <DialogContent sx={{ pt: 4, pb: 2, px: 3, textAlign: "center" }}>
-          {/* Warning icon */}
-          <Avatar sx={{ bgcolor: "#ffebee", width: 64, height: 64, mx: "auto", mb: 2 }}>
-            <WarningAmberIcon sx={{ color: "#c62828", fontSize: 36 }} />
-          </Avatar>
-
-          <Typography variant="h6" fontWeight="bold" mb={1}>Delete Resident?</Typography>
-          <Typography variant="body2" color="text.secondary">
-            You are about to permanently delete
-          </Typography>
-          <Typography fontWeight="bold" fontSize={15} mt={0.5} mb={1.5} color="#1a237e">
-            {deleteTarget?.name}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            This action <strong>cannot be undone</strong>. All associated data will be removed.
-          </Typography>
-        </DialogContent>
-
-        <Divider />
-        <DialogActions sx={{ px: 3, py: 2, gap: 1, justifyContent: "center" }}>
-          <Button
-            fullWidth
-            variant="outlined"
-            onClick={() => setDeleteTarget(null)}
-            sx={{ borderRadius: 2, borderColor: "#ccc", color: "#555", py: 1 }}
-          >
-            Cancel
-          </Button>
-          <Button
-            fullWidth
-            variant="contained"
-            onClick={handleDelete}
-            disabled={deleting}
-            sx={{ borderRadius: 2, bgcolor: "#c62828", py: 1, minWidth: 120, "&:hover": { bgcolor: "#b71c1c" } }}
-          >
-            {deleting ? <CircularProgress size={18} color="inherit" /> : "Yes, Delete"}
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+      <AdminDeleteDialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={handleDelete} busy={deleting} title="Delete Resident?" name={deleteTarget?.name} description="This action cannot be undone. The resident account will be removed.">
+        {deleteError && <Toast severity="error">{deleteError}</Toast>}
+      </AdminDeleteDialog>
+    </div>
   );
 };
 

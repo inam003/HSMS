@@ -1,27 +1,31 @@
+import AdminDialog, { AdminDialogHeader as ModalHeader, AdminDeleteDialog } from "../../components/common/AdminDialog";
+import Toast from "../../components/common/Toast";
 import { useEffect, useState } from "react";
 import {
-  Box, Typography, Button, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Paper, Dialog, DialogContent, DialogActions,
-  TextField, Alert, IconButton, Tooltip, Divider, Avatar, CircularProgress
+  Box, Typography, Button, DialogContent, DialogActions,
+  TextField, Divider, CircularProgress
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
+import EditOutlined from "@mui/icons-material/EditOutlined";
+import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
 import SecurityIcon from "@mui/icons-material/Security";
-import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import SearchRounded from "@mui/icons-material/SearchRounded";
+import FilterAltOutlined from "@mui/icons-material/FilterAltOutlined";
+import CalendarTodayOutlined from "@mui/icons-material/CalendarTodayOutlined";
+import KeyboardArrowDownRounded from "@mui/icons-material/KeyboardArrowDownRounded";
+import ChevronLeftRounded from "@mui/icons-material/ChevronLeftRounded";
+import ChevronRightRounded from "@mui/icons-material/ChevronRightRounded";
+import MeetingRoomOutlined from "@mui/icons-material/MeetingRoomOutlined";
 import api from "../../api/axios";
+import "./Members.css";
+import "./Guards.css";
 
-const ModalHeader = ({ icon, title, subtitle, color = "#1a237e" }) => (
-  <Box sx={{ bgcolor: color, px: 3, py: 2.5, borderRadius: "12px 12px 0 0" }}>
-    <Box display="flex" alignItems="center" gap={1.5}>
-      <Box sx={{ color: "rgba(255,255,255,0.85)", display: "flex" }}>{icon}</Box>
-      <Box>
-        <Typography variant="h6" fontWeight="bold" color="white">{title}</Typography>
-        {subtitle && <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.7)" }}>{subtitle}</Typography>}
-      </Box>
-    </Box>
-  </Box>
-);
+const initials = name => (name || "?").trim().split(/\s+/).slice(0, 2).map(part => part.charAt(0)).join("").toUpperCase();
+const GuardShift = ({ value }) => {
+  const parts = (value || "").match(/^(Morning|Evening|Night|Day)\b[\s:(–—-]*(.*?)[)]?$/i);
+  return parts ? <span className="hs-guard-shift">{parts[1]}{parts[2] && <small>{parts[2]}</small>}</span> : <span className="hs-guard-shift">{value || "—"}</span>;
+};
+
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -37,6 +41,19 @@ const emptyForm = { Name: "", Email: "", Password: "", Contact_No: "", Shift_Tim
 
 const Guards = () => {
   const [guards, setGuards]         = useState([]);
+  const [search, setSearch] = useState("");
+  const [shift, setShift] = useState("");
+  const [gate, setGate] = useState("");
+  const [page, setPage] = useState(1);
+  const [loadError, setLoadError] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const pageSize = 10;
+  const shifts = [...new Set(guards.map(guard => guard.Shift_Timing).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  const gates = [...new Set(guards.map(guard => guard.Assigned_Gate).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  const query = search.trim().toLowerCase();
+  const filtered = guards.filter(guard => (!shift || guard.Shift_Timing === shift) && (!gate || guard.Assigned_Gate === gate) && [guard.Name, guard.Email].some(value => (value || "").toLowerCase().includes(query)));
+  const currentPage = Math.min(page, Math.max(1, Math.ceil(filtered.length / pageSize)));
+  const visible = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
   const [open, setOpen]             = useState(false);
   const [editId, setEditId]         = useState(null);
   const [form, setForm]             = useState(emptyForm);
@@ -49,7 +66,8 @@ const Guards = () => {
   const [loading, setLoading]       = useState(true);
 
   const load = async () => {
-    try { const { data } = await api.get("/guards"); setGuards(data); }
+    try { setLoadError(""); const { data } = await api.get("/guards"); setGuards(data); }
+    catch (e) { setLoadError(e.response?.data?.message || "Unable to load guards. Please try again."); }
     finally { setLoading(false); }
   };
   useEffect(() => { load(); }, []);
@@ -73,7 +91,7 @@ const Guards = () => {
 
   const handleSave = async () => {
     setTouched({ Name: true, Email: true, Password: true });
-    if (!isValid) return;
+    if (!isValid || saving) return;
     setSaving(true); setSubmitError("");
     try {
       const payload = { ...form };
@@ -86,74 +104,48 @@ const Guards = () => {
   };
 
   const handleDelete = async () => {
-    if (!deleteTarget) return;
-    setDeleting(true);
+    if (!deleteTarget || deleting) return;
+    setDeleting(true); setDeleteError("");
     try {
       await api.delete(`/guards/${deleteTarget.id}`);
-      setSuccess(`${deleteTarget.name} has been removed.`); load();
-    } catch { /* ignore */ }
-    finally { setDeleting(false); setDeleteTarget(null); }
+      setSuccess(`${deleteTarget.name} has been removed.`); setDeleteTarget(null); load();
+    } catch (e) { setDeleteError(e.response?.data?.message || "Unable to delete this guard. Please try again."); }
+    finally { setDeleting(false); }
   };
 
-  if (loading) return (
-    <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-      <CircularProgress sx={{ color: "#1a237e" }} />
-    </Box>
-  );
-
   return (
-    <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h5" fontWeight="bold">Security Guard Management</Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpen()}
-          sx={{ bgcolor: "#1a237e", borderRadius: 2 }}>Add Guard</Button>
-      </Box>
-      {success && <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSuccess("")}>{success}</Alert>}
-
-      <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
-        <Table>
-          <TableHead sx={{ bgcolor: "#1a237e" }}>
-            <TableRow>
-              {["Name", "Email", "Contact", "Shift Timing", "Assigned Gate", "Actions"].map((h) => (
-                <TableCell key={h} sx={{ color: "white", fontWeight: "bold" }}>{h}</TableCell>
-              ))}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {guards.map((g) => (
-              <TableRow key={g._id} hover>
-                <TableCell>{g.Name}</TableCell>
-                <TableCell>{g.Email}</TableCell>
-                <TableCell>{g.Contact_No}</TableCell>
-                <TableCell>{g.Shift_Timing}</TableCell>
-                <TableCell>{g.Assigned_Gate}</TableCell>
-                <TableCell>
-                  <Tooltip title="Edit"><IconButton size="small" color="primary" onClick={() => handleOpen(g)}><EditIcon /></IconButton></Tooltip>
-                  <Tooltip title="Delete"><IconButton size="small" color="error" onClick={() => setDeleteTarget({ id: g._id, name: g.Name })}><DeleteIcon /></IconButton></Tooltip>
-                </TableCell>
-              </TableRow>
-            ))}
-            {!guards.length && <TableRow><TableCell colSpan={6} align="center" sx={{ py: 4, color: "#aaa" }}>No guards found</TableCell></TableRow>}
-          </TableBody>
-        </Table>
-      </TableContainer>
+    <div className="hs-guard-management">
+      <div className="hs-page-heading hs-members-heading hs-guard-heading"><div><h1>Security Guard Management</h1><p>Manage guard accounts, shifts, and gate assignments.</p></div><button className="hs-resident-add" onClick={() => handleOpen()}><AddIcon/>Add guard</button></div>
+      {success && <Toast severity="success" sx={{ mb: 2 }} onClose={() => setSuccess("")}>{success}</Toast>}
+      {loadError && <Toast severity="error" sx={{ mb: 2 }} action={<Button color="inherit" onClick={() => { setLoading(true); load(); }}>Retry</Button>}>{loadError}</Toast>}
+      <section className="hs-panel hs-residents-panel hs-guard-panel" aria-label="Security guard directory" aria-busy={loading}>
+        <div className="hs-guard-toolbar"><div className="hs-guard-toolbar-heading"><h2>All guards <span>{guards.length}</span></h2></div><div className="hs-residents-filters hs-guard-filters"><label className="hs-resident-search"><SearchRounded/><input type="search" aria-label="Search guards by name or email" placeholder="Search by name or email..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}/></label><div className="hs-guard-selects">
+          <div className="hs-resident-filter"><FilterAltOutlined/><select aria-label="Filter guards by shift" value={shift} onChange={e => { setShift(e.target.value); setPage(1); }}><option value="">All shifts</option>{shifts.map(value => <option key={value} value={value}>{value}</option>)}</select><KeyboardArrowDownRounded/></div>
+          <div className="hs-resident-filter hs-guard-gate-filter"><CalendarTodayOutlined/><select aria-label="Filter guards by assigned gate" value={gate} onChange={e => { setGate(e.target.value); setPage(1); }}><option value="">All gates</option>{gates.map(value => <option key={value} value={value}>{value}</option>)}</select><KeyboardArrowDownRounded/></div>
+        </div></div></div>
+        <div className="hs-residents-table-wrap"><table className="hs-residents-table hs-guard-table"><thead><tr>{["Name", "Email", "Contact", "Shift timing", "Assigned gate", "Actions"].map(label => <th key={label} scope="col">{label}</th>)}</tr></thead><tbody>
+          {loading ? <tr><td colSpan={6}><div className="hs-residents-loading" role="status"><CircularProgress size={26}/>Loading guards...</div></td></tr> : visible.map(guard => <tr key={guard._id}><td><div className="hs-resident-person"><span className="hs-resident-avatar" aria-hidden="true">{initials(guard.Name)}</span><strong>{guard.Name}</strong></div></td><td>{guard.Email || "—"}</td><td>{guard.Contact_No || "—"}</td><td><GuardShift value={guard.Shift_Timing}/></td><td>{guard.Assigned_Gate ? <span className="hs-guard-gate"><MeetingRoomOutlined/>{guard.Assigned_Gate}</span> : "—"}</td><td><div className="hs-resident-actions"><button className="hs-resident-edit" title="Edit guard" aria-label={`Edit ${guard.Name}`} onClick={() => handleOpen(guard)}><EditOutlined/></button><button className="hs-resident-delete" title="Delete guard" aria-label={`Delete ${guard.Name}`} onClick={() => { setDeleteError(""); setDeleteTarget({ id: guard._id, name: guard.Name }); }}><DeleteOutlineRounded/></button></div></td></tr>)}
+          {!loading && !visible.length && <tr><td colSpan={6} className="hs-empty">{loadError ? "Guard data unavailable" : guards.length ? "No guards match your search or filters." : "No guards yet. Add a guard to get started."}</td></tr>}
+        </tbody></table></div>
+        <div className="hs-residents-pagination"><span aria-live="polite">Showing {filtered.length ? (currentPage - 1) * pageSize + 1 : 0}–{Math.min(currentPage * pageSize, filtered.length)} of {filtered.length} guards</span><div><button disabled={loading || currentPage <= 1} onClick={() => setPage(currentPage - 1)}><ChevronLeftRounded/>Previous</button><button disabled={loading || currentPage * pageSize >= filtered.length} onClick={() => setPage(currentPage + 1)}>Next<ChevronRightRounded/></button></div></div>
+      </section>
 
       {/* ── Add / Edit Dialog ── */}
-      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+      <AdminDialog busy={saving} open={open} onClose={() => { if (!saving) setOpen(false); }} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
         <ModalHeader icon={<SecurityIcon />} title={editId ? "Edit Guard" : "Add Security Guard"}
           subtitle={editId ? "Update guard details below" : "Enter the guard information"} />
         <DialogContent sx={{ pt: 3, pb: 1, px: 3 }}>
-          {submitError && <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSubmitError("")}>{submitError}</Alert>}
-          <Box display="flex" gap={2} mb={1}>
+          {submitError && <Toast severity="error" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSubmitError("")}>{submitError}</Toast>}
+          <Box display="flex" flexDirection={{ xs: "column", sm: "row" }} gap={2} mb={1}>
             <TextField fullWidth label="Full Name" required value={form.Name}
               onChange={(e) => setForm({ ...form, Name: e.target.value })} {...field("Name")} />
-            <TextField fullWidth label="Email Address" type="email" value={form.Email}
+            <TextField fullWidth label="Email Address" type="email" required value={form.Email}
               onChange={(e) => setForm({ ...form, Email: e.target.value })} {...field("Email")} />
           </Box>
           <TextField fullWidth label={editId ? "New Password (leave blank to keep current)" : "Password"}
             type="password" required={!editId} value={form.Password}
             onChange={(e) => setForm({ ...form, Password: e.target.value })} {...field("Password")} />
-          <Box display="flex" gap={2} mb={1}>
+          <Box display="flex" flexDirection={{ xs: "column", sm: "row" }} gap={2} mb={1}>
             <TextField fullWidth label="Contact Number" value={form.Contact_No}
               onChange={(e) => setForm({ ...form, Contact_No: e.target.value })} helperText=" " />
             <TextField fullWidth label="Shift Timing" value={form.Shift_Timing}
@@ -164,36 +156,19 @@ const Guards = () => {
         </DialogContent>
         <Divider />
         <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
-          <Button onClick={() => setOpen(false)} sx={{ color: "#555", borderRadius: 2 }}>Cancel</Button>
+          <Button disabled={saving} onClick={() => setOpen(false)} sx={{ color: "#555", borderRadius: 2 }}>Cancel</Button>
           <Button variant="contained" onClick={handleSave} disabled={!isValid || saving}
-            sx={{ bgcolor: "#1a237e", borderRadius: 2, px: 3, minWidth: 120, "&:disabled": { bgcolor: "#c5cae9", color: "#fff" } }}>
+            sx={{ bgcolor: "#0854ed", borderRadius: 2, px: 3, minWidth: 120, "&:disabled": { bgcolor: "#c5cae9", color: "#fff" } }}>
             {saving ? <CircularProgress size={18} color="inherit" /> : (editId ? "Save Changes" : "Add Guard")}
           </Button>
         </DialogActions>
-      </Dialog>
+      </AdminDialog>
 
       {/* ── Delete Dialog ── */}
-      <Dialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3, overflow: "hidden" } }}>
-        <Box sx={{ bgcolor: "#c62828", height: 6 }} />
-        <DialogContent sx={{ pt: 4, pb: 2, px: 3, textAlign: "center" }}>
-          <Avatar sx={{ bgcolor: "#ffebee", width: 64, height: 64, mx: "auto", mb: 2 }}>
-            <WarningAmberIcon sx={{ color: "#c62828", fontSize: 36 }} />
-          </Avatar>
-          <Typography variant="h6" fontWeight="bold" mb={1}>Delete Guard?</Typography>
-          <Typography variant="body2" color="text.secondary">You are about to permanently delete</Typography>
-          <Typography fontWeight="bold" fontSize={15} mt={0.5} mb={1.5} color="#1a237e">{deleteTarget?.name}</Typography>
-          <Typography variant="body2" color="text.secondary">This action <strong>cannot be undone</strong>.</Typography>
-        </DialogContent>
-        <Divider />
-        <DialogActions sx={{ px: 3, py: 2, gap: 1, justifyContent: "center" }}>
-          <Button fullWidth variant="outlined" onClick={() => setDeleteTarget(null)} sx={{ borderRadius: 2, borderColor: "#ccc", color: "#555", py: 1 }}>Cancel</Button>
-          <Button fullWidth variant="contained" onClick={handleDelete} disabled={deleting}
-            sx={{ borderRadius: 2, bgcolor: "#c62828", py: 1, minWidth: 120, "&:hover": { bgcolor: "#b71c1c" } }}>
-            {deleting ? <CircularProgress size={18} color="inherit" /> : "Yes, Delete"}
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+      <AdminDeleteDialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={handleDelete} busy={deleting} title="Delete Guard?" name={deleteTarget?.name}>
+        {deleteError && <Toast severity="error">{deleteError}</Toast>}
+      </AdminDeleteDialog>
+    </div>
   );
 };
 
